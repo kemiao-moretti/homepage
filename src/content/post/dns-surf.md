@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "DNS.Surf: Checking Global DNS Resolution from the Edge"
 description: How I built DNS.Surf to inspect domain DNS propagation across 120+ countries and 330+ edge locations using Vercel Edge and Cloudflare Workers.
 dateFormatted: Nov 8, 2023

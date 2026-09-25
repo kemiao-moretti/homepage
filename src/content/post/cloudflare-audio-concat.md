@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Concatenating Audio Files in Cloudflare Workers
 description: Stitching multiple audio tracks together in Cloudflare Workers by leveraging Browser Rendering and WASM-based FFmpeg.
 dateFormatted: April 19, 2025

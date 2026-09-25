@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Set Up an Unlimited Docker Registry Mirror with Cloudflare Snippets
 description: Deploy a high-efficiency Docker registry mirror on Cloudflare Snippets with zero bandwidth billing, supporting Docker Hub, GHCR, Quay, and more.
 dateFormatted: Dec 21, 2024

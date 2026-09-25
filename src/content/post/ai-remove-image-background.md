@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Removing Image Backgrounds Locally in the Browser with AI
 description: Run the RMBG-1.4 model client-side using WebGPU and Transformers.js to strip image backgrounds with zero server uploads.
 dateFormatted: Jul 14, 2024

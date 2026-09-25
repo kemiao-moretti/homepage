@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "TempMail.Best: Disposable Temporary Email on Cloudflare Workers"
 description: A fast and privacy-friendly disposable email service running 100% on Cloudflare Email Workers and Nuxt.
 dateFormatted: Jun 6th, 2024

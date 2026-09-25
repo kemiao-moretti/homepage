@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "Under the Hood of SSH AI Chat: How It Works"
 description: How I built a terminal AI chat app over SSH using Node.js, React Ink, GitHub SSH key auth, and the Vercel AI SDK.
 dateFormatted: Aug 1, 2025

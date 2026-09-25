@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Tunnel Forwarding Tools for Developers
 description: A handy list of tunneling tools for exposing local web services to the public internet for webhook testing and sharing previews.
 dateFormatted: Oct 31, 2023

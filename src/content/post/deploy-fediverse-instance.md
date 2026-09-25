@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Running a Personal Fediverse Instance on a Shoestring Budget
 description: How I deployed a lightweight Pleroma instance using free cloud tiers, leaving only domain renewal costs.
 dateFormatted: Nov 27, 2023

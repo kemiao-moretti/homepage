@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "Sink: A Cloudflare-Native URL Shortener with Analytics"
 description: An open-source, serverless link shortener built on Cloudflare Workers Analytics Engine supporting up to 3M monthly analytics events.
 dateFormatted: Jun 4th, 2024

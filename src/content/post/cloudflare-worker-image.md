@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Processing Images with Cloudflare Workers and WebAssembly
 description: Building a serverless image processing service on Cloudflare Workers with WebAssembly, supporting resize, crop, rotate, filters, and watermarks.
 dateFormatted: Nov 18, 2023

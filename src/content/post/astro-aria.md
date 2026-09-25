@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "Aria: A Minimalist Astro Homepage Template"
 description: Porting DevDojo's clean Aria template to Astro as an open-source personal homepage theme.
 dateFormatted: Jun 6, 2024

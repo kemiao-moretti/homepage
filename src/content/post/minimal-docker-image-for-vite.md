@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Minimal Docker Image Packaging for Vite SSR Projects
 description: How I shrunk a Vite SSR Docker image from 1.06GB down to 135MB using multi-stage builds and dependency inlining.
 dateFormatted: Aug 31, 2024

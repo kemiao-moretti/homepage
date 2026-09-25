@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Extracting GitHub OpenGraph Images for Rich Card Previews
 description: A simple proxy to fetch official GitHub OpenGraph preview cards for repositories, issues, pull requests, discussions, and commits.
 dateFormatted: Dec 19, 2023

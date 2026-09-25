@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: My App Defaults 2023
 description: The daily tools, apps, and services I relied on in 2023 for email, notes, photo management, browsing, and more.
 dateFormatted: Nov 11, 2023

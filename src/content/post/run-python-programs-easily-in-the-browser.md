@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Run Python in Your Browser Effortlessly
 description: Using WebAssembly and Pyodide to run Python directly in the browser, taking Microsoft's MarkItDown as an example to convert Office files with zero installation.
 dateFormatted: Dec 21, 2024

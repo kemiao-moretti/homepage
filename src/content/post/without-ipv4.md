@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Remote Access to Your Homelab Without a Public IPv4 Address
 description: How I use Cloudflare Tunnel, Clash Meta, and NATMap to access my homelab and seed BitTorrent at full speed without a public IPv4.
 dateFormatted: Apr 30, 2024

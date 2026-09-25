@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Building a CORS-Friendly PyPI Mirror on Cloudflare
 description: Set up a lightweight PyPI mirror on Cloudflare Workers or Snippets that supports PEP 691 and CORS for in-browser Pyodide environments.
 dateFormatted: Dec 21, 2024

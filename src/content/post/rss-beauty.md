@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "RSS.Beauty: Making Raw Feeds Pleasant to Read"
 description: An XSLT-based stylesheet for RSS and Atom feeds that renders raw XML as clean, responsive web pages directly in the browser.
 dateFormatted: Dec 31, 2024

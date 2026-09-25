@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Listening to Hacker News as a Podcast
 description: Using AI and Cloudflare to turn daily Hacker News top stories into a podcast you can subscribe to in any podcast app.
 dateFormatted: Mar 3, 2025

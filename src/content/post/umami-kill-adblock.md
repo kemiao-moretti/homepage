@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Preventing AdBlock from Blocking Umami Analytics
 description: Proxy Umami's script and ingest endpoints through a Cloudflare Worker to avoid third-party ad-block filter rules.
 dateFormatted: Jan 6, 2024

@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Flashing OpenWrt on the Alibaba Cloud AP8220
 description: A practical walkthrough for flashing OpenWrt on the Alibaba Cloud AP8220 router, from U-Boot access to partitioning and firmware installation.
 dateFormatted: Jul 29, 2024

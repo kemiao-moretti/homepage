@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "hink: A URL Shortener in Under 10 Lines of Code"
 description: A minimalist URL shortener built with Git commits and serverless edge functions in under 10 lines of code.
 dateFormatted: Aug 31, 2025

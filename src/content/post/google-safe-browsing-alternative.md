@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Replacing Google Safe Browsing with Cloudflare Zero Trust
 description: Using Cloudflare Zero Trust Gateway and DNS-over-HTTPS (DoH) as a free, customizable alternative to Google Safe Browsing.
 dateFormatted: Jul 14th, 2024

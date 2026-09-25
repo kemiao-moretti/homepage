@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Running MCP Servers in a Docker Sandbox
 description: Isolate MCP servers inside Docker and bridge them to SSE to avoid arbitrary local file access risks from npx and uvx.
 dateFormatted: Apr 25, 2025

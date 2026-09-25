@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Preventing AdBlock from Blocking Vercel Analytics
 description: Use Vercel rewrites and a custom script endpoint to bypass AdBlock filters for Vercel Analytics.
 dateFormatted: Jun 6, 2024

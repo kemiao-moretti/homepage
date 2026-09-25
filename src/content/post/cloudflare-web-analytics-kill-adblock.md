@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Preventing AdBlock from Blocking Cloudflare Web Analytics
 description: Proxy Cloudflare Web Analytics through a Cloudflare Worker to bypass common ad-block filter lists.
 dateFormatted: Jan 8th, 2024

@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Building a Fully Automated AI Weekly with AI Agents
 description: How I built AIGC Weekly using Claude agents, Next.js 15, and Cloudflare to collect, curate, write, and publish AI news on autopilot.
 dateFormatted: Dec 13, 2025

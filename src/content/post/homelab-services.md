@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: The Long-Standing Services in My Homelab
 description: A look back at a decade of self-hosting, covering the hardware, networking, media, and smart home services that earned a permanent place in my homelab.
 dateFormatted: Apr 27, 2024

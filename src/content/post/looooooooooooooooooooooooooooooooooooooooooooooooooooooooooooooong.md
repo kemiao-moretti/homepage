@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "L(O*62).ONG: Making URLs Absurdly Long"
 description: Building a URL lengthener that pushes the 63-character DNS label limit and wrestling with TLS certificate commonName constraints.
 dateFormatted: Jun 1, 2024

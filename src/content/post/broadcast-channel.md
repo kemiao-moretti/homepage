@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: "BroadcastChannel: Turn Your Telegram Channel into a Microblog"
 description: A zero-JS microblog engine that renders Telegram channel updates as clean web pages using modern CSS features.
 dateFormatted: Aug 11, 2024

@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Processing Images with Vercel Edge Functions
 description: Running an image processing pipeline on Vercel Edge with WebAssembly, supporting format conversion, resize, crop, filters, and watermarks.
 dateFormatted: Dec 17th, 2023

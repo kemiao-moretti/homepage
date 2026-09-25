@@ -1,5 +1,4 @@
 ---
-layout: ../../layouts/post.astro
 title: Leveling Up My Blog Typography with AI
 description: Using AI prompts to rethink post layout and styling, turning plain markdown into well-crafted pages.
 dateFormatted: Mar 23, 2025
