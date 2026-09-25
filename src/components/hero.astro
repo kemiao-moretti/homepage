@@ -3,6 +3,7 @@ import { Image } from "astro:assets";
 import site from "../collections/site.json";
 import Badge from "./badge.astro";
 import Button from "./button.astro";
+import LogoMark from "./logo-mark.astro";
 import PlaceholderMedia from "./placeholder-media.astro";
 
 const { hero, profile } = Astro.props;
@@ -136,10 +137,10 @@ const avatar = Object.entries(images).find(([path]) =>
                   </span>
                 </div>
                 <div class="flex shrink-0 items-end justify-end pb-1">
-                  <span
-                    class="text-4xl leading-none opacity-80 select-none dark:opacity-70"
-                    aria-hidden="true">{site.logoIcon}</span
-                  >
+                  <LogoMark
+                    class="h-8 w-auto opacity-80 select-none dark:opacity-70"
+                    aria-hidden="true"
+                  />
                 </div>
               </div>
             </div>

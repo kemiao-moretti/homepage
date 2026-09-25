@@ -160,6 +160,7 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 
 - `profile.avatar` 填的是**`src/assets/images/` 下的文件名**（如 `avatar.webp`），不是 URL、也不是 `/assets/images/...` 路径。`hero.astro` 用 `import.meta.glob` 把该目录映射成 `{ 文件名 → ImageMetadata }`，交给 `<Image>` 输出 WebP + srcset + `width/height`（防 CLS）。
   - 换头像：把图片丢进 `src/assets/images/`，把文件名填进 `profile.avatar`，**不用动代码**。
+- `logoIcon` 只作用于**页头 / 页脚**的 `logo.astro`（「〄 克喵:)」那串）。首屏面板右下角的手写「克喵:)」是独立组件 `src/components/logo-mark.astro`，**不吃 `logoIcon`** —— 改它要改组件（见 §6.7）。
   - 留空或文件名对不上 → `avatar` 为 `undefined` → 自动降级成 `PlaceholderMedia` 渐变圆（首字）。
   - 别把图片放 `public/`：那会原样进 `dist`、绕过优化。放 `src/assets/images/` 后，实测一张 103 kB 的源图在 `widths={[360,540,720]}` 下产出 19 / 37 / 57 / 102 kB 四档，首屏按 `sizes` 只会取其中一档。
 - `legal.icp` / `legal.police` 为 `null` 时**整个链接不渲染**（footer 里做了条件判断）。
@@ -211,6 +212,16 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 结构上的两个小约定：
 - `divider` 塞在区块对象里（而不是单独一个数组），是为了**顺序不必两处维护**：`index.astro` 把 `projects → sites → writings` 的块序写死，只从 JSON 取文字。
 - `home.sites.helper.width` 是 `pages.json` 里唯一的非文案字段（辅助卡宽度 token）。它和那条辅助卡一一对应，改文案时顺手能看见，就没有再拆文件。
+
+### 6.7 手写「克喵:)」logo mark（`src/components/logo-mark.astro`）
+
+首屏那块 `frost-panel` 右下角的横长手写 logo，是**内联 SVG**（不是 `<img>`）；同内容另存一份在 `public/kemiao.svg`，可直接用 `/kemiao.svg` 引用。
+
+- **为什么必须内联**：SVG 里写的是 `fill/stroke="currentColor"`，只有内联才跟随 `color`（含深色主题）。用 `<img>` 引会让 `currentColor` 退化，**深色面板上直接看不见**。
+- 组件透传 `class` 和其余属性，`hero.astro` 传 `h-8 w-auto opacity-80 select-none dark:opacity-70` + `aria-hidden="true"`。
+- 尺寸：viewBox 比值 **2.689**，`h-8`(32px) → 宽 86px。面板高度由左侧（`PERSONAL PROFILE` + `Since` 胶囊）决定，所以换上去**没有撑高面板**（实测 88.3px）。
+- **不是从 `liushen.svg` 改字来的**：原文件是把整串 `LiuShen` 轮廓化成**单条 `<path>`**（d 长 16179），改数字换不了字。做法是用 fontTools 从 **ZCOOLKuaiLe 站酷快乐体**取「克喵:)」轮廓，再按原 logo 特征补：`skewX(-9)` 倾斜 + `stroke-width 3` 圆头加粗（`linecap/linejoin=round`）+ 5% 字距。再生成脚本与候选字体对比见 `.workbuddy/memory/2026-09-25.md`。
+- 页头 / 页脚的「〄 克喵:)」是另一套（`site.json` 的 `logoIcon` + `name`，走 `logo.astro`），**两者互不影响**。
 
 ## 7. 主题与样式系统
 
@@ -396,6 +407,7 @@ MissingSharp: Could not find Sharp. Please install Sharp (`sharp`) manually ...
 | 想做的事 | 改哪里 |
 | --- | --- |
 | 改站点名 / Logo 图标 | `collections/site.json` 的 `name` / `logoIcon` |
+| 改首屏右下角手写 logo | `src/components/logo-mark.astro`（内联 SVG，源文件 `public/kemiao.svg`，见 §6.7） |
 | 改首屏文案 / 标签 / 按钮 | `collections/site.json` 的 `hero.*` |
 | 改首屏头像面板标签 | `collections/site.json` 的 `profile.panelLabel` / `profile.sinceLabel` |
 | 换首屏头像 | `collections/site.json` 的 `profile.avatar`（填 `src/assets/images/` 下的文件名）；留空或对不上则渲染渐变占位圆 |
