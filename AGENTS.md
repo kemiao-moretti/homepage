@@ -2,273 +2,301 @@
 
 给 AI 编码 agent 的项目说明书（人类读者同样适用）。结论先行，坑点在后半段。
 
-> 最近一次大改动：2026-09-25 由 **Astro 4.8.2 → 7.3.5 / Tailwind 3 → 4**。升级明细与保留的行为变化见 §12。
+> **最近一次大改动：2026-09-25**（commit `652d660`，分支 `feat/liushen-restyle`）—— 从上游 `astro-aria` 模板改造成**克喵的个人主页**：视觉与布局逐像素复刻 `https://www.liushen.fun/`，文章不再用本地 Markdown，改为构建时**远程拉取** `https://blog.518339.xyz/` 的全文。
+> 同时包含了 `f7790e7` 的 **Astro 4.8.2 → 7.3.5 / Tailwind 3 → 4** 升级（历史记录见 §12）。
 
 ---
 
 ## 0. 一句话
 
-一份 **Astro 7 静态个人主页 / 博客**，基于 `ccbikai/astro-aria` 模板：纯 Tailwind 手工排版、无 UI 框架、无后端、无数据库，内容靠 Markdown + 三个 JSON 文件驱动。
+一份 **Astro 7 静态站点**：纯 Tailwind 手工排版、无 UI 框架、无后端、无数据库。**文章来自远程博客**（构建时抓取），其余内容（站点信息 / 项目 / 经历 / 友站 / 导航 / 社交）由 `src/collections/*.json` 驱动。
 
-## 1. 项目现状（动手前必读）
+## 1. 先搞清楚的三件事
 
-**这是上游模板的纯 fork，尚未做任何定制。** git 历史里没有一个提交属于本项目所有者，内容全是原作者 Kai 的信息。当前工作在分支 `chore/astro7-upgrade` 上。
+1. **仓库根在 workspace 下一层**：所有命令都要先 `cd homepage/homepage`。
+2. **文章不在仓库里**。`src/content/` 已被删除，页面上的文章全部来自 `src/loaders/blog-posts.ts` 在构建时抓取的远程博客。仓库里改不到文章内容。
+3. **视觉是"复刻"而不是"参考"**。目标站快照是 `E:/CSharp/Temp/lsf.html`（105,764 B）与 `lsf-main.css`（97,068 B），样式类名、圆角、间距、shadows 都从那两个文件里抄。改 UI 前先在那里 grep。
 
 远端：`git@github.com-kmoretti:kemiao-moretti/homepage.git`（SSH 主机别名 `github.com-kmoretti`）。
-
-改造成自己的站点时逐个替换：
-
-| 位置 | 文件:行 | 当前内容 |
-| --- | --- | --- |
-| 站点标题 / 首页标题 | `src/pages/index.astro:9` | `Kai` |
-| 首页自我介绍、技能清单、按钮 | `src/pages/index.astro:18-37` | "Hello, I'm Kai." / 南京前端 |
-| About 页文案 + 配图 | `src/pages/about.astro` | 南京前端工程师自述 |
-| About 页邮箱链接 | `src/pages/about.astro:55` | `mailto:astro-aria#miantiao.me`（`#` 是防爬虫写法，需换成真实地址） |
-| 工作经历 | `src/collections/experiences.json` | Full Truck Alliance / YOHO! / WuLian |
-| 项目列表 | `src/collections/projects.json` | 7 个上游项目，图片走 `github.html.zone` 外链 |
-| 页脚社交链接 + 版权 | `src/components/footer.astro` | Instagram / X / GitHub 均指向 ccbikai；`© Aria` |
-| Logo 文字 | `src/components/logo.astro:10` | `aria` |
-| 订阅表单 action | `src/components/home/writings.astro:5` | `https://feed.miantiao.me/`（上游作者的 feed，对本站无效） |
-| 32 篇文章 | `src/content/post/*.md` | 全部是上游作者的技术随笔，正文图片走 `static.miantiao.me` 外链 |
-| README / package.json 名称 | `README.md`、`package.json:2` | `astro-aria` |
-
-**未被任何代码引用**的模板遗留素材（可清理，也可复用）：`public/assets/images/posts/*`（8 张）、`public/assets/images/projects/*`（6 张）。
+Blog 源仓库（用于取 frontmatter）：`kemiao-moretti/meowloge` @ `main`。
 
 ## 2. 技术栈
 
 | 项 | 值 | 备注 |
 | --- | --- | --- |
-| 框架 | Astro `7.3.5` | `output: static`（默认） |
-| 样式 | Tailwind CSS `4.3.3` + `@tailwindcss/typography` `0.5.20` | 经 `@tailwindcss/vite` 插件接入，**不再用 `@astrojs/tailwind`** |
+| 框架 | Astro `7.3.5` | `output: static` |
+| 样式 | Tailwind CSS `4.3.3` + `@tailwindcss/typography` `0.5.20` | 经 `@tailwindcss/vite` 接入，**没有 `tailwind.config.mjs`** |
 | 包管理 | pnpm `9.12.2` | `lockfileVersion: '9.0'`，别用 npm/yarn |
-| Node | `>= 22.12.0` | Astro 7 的硬性要求，`.node-version` 已写 `22.12.0`；实测 `22.22.2` 正常 |
-| Lint/格式化 | Biome `2.5.14` | `pnpm check` 会带 `--write --unsafe` 直接改文件 |
+| Node | `>= 22.12.0` | Astro 7 硬性要求；实测 `22.22.2` 正常 |
+| Lint / 格式化 | Biome `2.5.14` | ⚠️ `pnpm check` 会带 `--write --unsafe` **直接改文件** |
 | 类型 | TypeScript `5.9.3` | **不要升到 7.x**：`@astrojs/check@0.9.10` 的 peer 只声明 `^5.0.0 \|\| ^6.0.0` |
-| CI / 部署 | **无** | 没有 `.github/`、没有 vercel/netlify/wrangler 配置、没有 `.env` 示例 |
+| 运行时依赖 | `fast-xml-parser`（解析 RSS）、`yaml`（解析 frontmatter） | 只有这两个 |
+| SEO | `@astrojs/sitemap` | 见 §6.4 |
+| CI / 部署 | **无** | 没有 `.github/`、没有 `.env` 示例 |
 
 ## 3. 常用命令
 
 ```bash
 cd homepage/homepage          # 注意：仓库根在 workspace 下一层
 
-# 本机（WorkBuddy 沙箱）跑 install / build 都要带这个前缀，原因见 §8.2
-CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm install    # 首次约 2.5 分钟，之后几秒
-CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm build      # = astro check && astro build
+# 本机（WorkBuddy 沙箱）跑 install / build 都要带这个前缀，原因见 §9.2
+CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm install
+CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm build   # = astro check && astro build
 
-pnpm dev                      # 开发服务器（不删文件，无需前缀）
-#   ⚠️ 若切换过 Astro 大版本，先杀掉残留的旧 dev server 进程，见 §8.12
-pnpm preview                  # 预览 dist/
-pnpm check                    # biome check --write --unsafe .
+# ✔ 改了 loader / 想拿最新文章，必须强制刷新，否则命中 30 分钟 TTL 缓存
+POSTS_REFRESH=1 CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm build
+
+pnpm dev         # 开发服务器（不删文件，无需前缀；改 loader 仍需 POSTS_REFRESH=1）
+pnpm preview     # 预览 dist/
 ```
+
+**验证基线**（2026-09-25 实测）：
+
+- `astro check` → **39 files / 0 errors / 0 warnings / 0 hints**
+- `pnpm build` → **7 个页面** + `sitemap-index.xml` + `sitemap-0.xml`，退出码 0
+- `biome check .` → 51 files，`No fixes applied`
+- CDP 视觉判定表（对比 liushen.fun）→ `verify-b8.mjs` **152/152**
+- CDP 交互回归 → `verify-b3.mjs` **22/22**
+
+页面清单必须恰为：`index.html`、`posts/`、`projects/`、`sites/`、`about/`、`post/ai-summary/`、`post/shortcode-showcase/`。
 
 ## 4. 目录地图
 
 ```
 src/
 ├─ assets/
-│  ├─ css/main.css            # 唯一的全局 CSS：Tailwind v4 入口 + 自定义样式
-│  └─ js/main.js              # 全部交互：深色模式、吸顶头部、移动端菜单
+│  ├─ css/main.css            # 唯一的全局 CSS：Tailwind v4 入口 + @theme token + 自定义类
+│  └─ js/main.js              # 全部交互：深色模式、吸顶头部、移动端菜单、导航高亮、复制订阅地址
 ├─ collections/               # 【注意】纯 JSON 数据，不是 Astro Collections
+│  ├─ site.json               # ⭐ 站点总配置：name/title/description/hero/profile/subscribe/legal/font
 │  ├─ menu.json               # 导航项 [{name, url}]
-│  ├─ experiences.json        # 工作经历
-│  └─ projects.json           # 项目卡片
-├─ content.config.ts          # 唯一的 collection 定义（glob loader）——在 src/ 根，不在 src/content/ 里
-├─ content/post/*.md          # 32 篇文章
-├─ components/
-│  ├─ logo.astro              # ✦ + 站点名
-│  ├─ header.astro            # 吸顶导航：菜单 / 汉堡按钮 / 日夜切换
-│  ├─ footer.astro            # Logo + 版权 + 3 个社交图标（内联 SVG）
-│  ├─ button.astro            # 药丸型链接按钮
-│  ├─ page-heading.astro      # 页面标题 + 描述
-│  ├─ posts-loop.astro        # 文章卡片列表，读 collection 并按日期倒排
-│  ├─ project.astro           # 项目卡片（双层虚线描边 hover 效果）
-│  ├─ about-experience.astro  # 单条工作经历（左侧时间轴 + 圆形 logo）
-│  ├─ square.astro / square-line.astro / square-lines.astro
-│  │                          # 背景装饰网格（固定在页面最底层，z-index:-1）
-│  └─ home/{projects,writings,separator}.astro
+│  ├─ social.json             # 页脚社交链接，按 group 分组
+│  ├─ projects.json           # 项目卡片（现为占位骨架）
+│  ├─ sites.json              # 友站 / 其他站点卡片
+│  ├─ experiences.json        # 工作经历（现为占位骨架）
+│  └─ about.json              # About 页文案 + 链接
+├─ content.config.ts          # 唯一的 collection 定义（blogPostsLoader）——在 src/ 根，不在 src/content/ 里
+├─ loaders/blog-posts.ts      # ⭐ 远程文章管道：RSS → 仓库文件树 → 正文抓取 → 绝对化
 ├─ layouts/
-│  ├─ main.astro              # 全站唯一 <html> 骨架：深色模式、注入位、Header/Footer
+│  ├─ main.astro              # 全站唯一 <html> 骨架：SEO meta、字体、注入位、Header/Endnote+Footer
 │  └─ post.astro              # 文章版式（标题 + prose 容器），由 [slug].astro 显式套用
+├─ components/
+│  ├─ tile-grid.astro         # 右上角虚线瓷砖背景（含裁剪容器，见 §9.14）
+│  ├─ atmosphere.astro        # 全屏四角光斑
+│  ├─ header.astro            # 吸顶导航：菜单 / 汉堡按钮 / 日夜切换
+│  ├─ logo.astro              # ✦ + 站点名（shrink-0 whitespace-nowrap，见 §9.15）
+│  ├─ hero.astro              # 首屏：徽章 + 标题 + 副标题 + 正文 + 标签 + CTA + 右侧头像面板
+│  ├─ section-divider.astro   # 区块间的虚线分隔条 + 居中胶囊
+│  ├─ endnote.astro           # 页脚上方的 Endnote 胶囊段（**包裹页脚**，见 §9.16）
+│  ├─ section-header.astro    # 区块头：eyebrow + h2 + description + <slot> aside
+│  ├─ helper-card.astro       # section-header 的 slot 内容：aside 卡片 + 箭头圆钮
+│  ├─ article-card.astro      # 文章卡（整卡可点，双层虚线错位 hover）
+│  ├─ site-card.astro         # 站点卡（aspect-[1782/971] 截图位 + 域名胶囊 + 箭头钮）
+│  ├─ project.astro           # 项目卡（1/3 图 + 2/3 文）
+│  ├─ posts-loop.astro        # 读 collection("post") 按日期倒排渲染 ArticleCard
+│  ├─ subscribe-card.astro    # RSS 订阅卡（复制地址 / Feedly / Inoreader）
+│  ├─ placeholder-media.astro # ⭐ 统一占位块：渐变底 + 首字，所有缺图位置都用它
+│  ├─ button.astro / badge.astro / page-heading.astro
+│  ├─ arrow-icon.astro        # 标题右侧的 hover 滑入箭头（opacity-0 → 100）
+│  ├─ arrow-icon-glyph.astro  # 圆钮里的静态箭头
+│  ├─ about-experience.astro  # 单条工作经历
+│  └─ home/{projects,sites,writings}.astro   # 首页三个内容区块
 └─ pages/
    ├─ index.astro             # /
    ├─ posts.astro             # /posts
    ├─ projects.astro          # /projects
+   ├─ sites.astro             # /sites
    ├─ about.astro             # /about
    └─ post/[slug].astro       # /post/<slug>
 ```
 
-**Astro 4 时代存在、现已删除的文件**（不要试图找回）：`src/content/config.js`、`tailwind.config.mjs`。
+**已删除、不要试图找回**：`src/content/`（32 篇本地文章）、`tailwind.config.mjs`、`src/content/config.js`、`components/{square,square-line,square-lines}.astro`、`components/home/separator.astro`、`public/assets/images/{posts,projects}/`。
 
-`src/env.d.ts` **不要删** —— Astro 7 会在跑 `build` / `dev` 时自动重新生成它（内容是 `astro/client` 与 `.astro/types.d.ts` 两条引用，顺序与 Astro 4 时代相反）。
+`src/env.d.ts` **不要删** —— Astro 7 会在跑 `build` / `dev` 时自动重新生成它。
 
-## 5. 渲染链路（关键机制）
+## 5. 远程文章管道（`src/loaders/blog-posts.ts`）
 
 ```
-post/*.md
-   │  content.config.ts 里的 glob loader（base: ./src/content/post）
+RSS (blog.518339.xyz/posts/index.xml，退路 /index.xml)
+   │  parseRss()：只留 pathname 形如 /p/<slug>.html 的条目
    ▼
-getCollection("post")  →  entry.id == 文件名（即 URL slug）
-   │
+jsDelivr 包索引 API (data.jsdelivr.com/v1/packages/gh/kemiao-moretti/meowloge@main)
+   │  listPostFiles()：走 content/posts/**.md（不消耗 GitHub API 配额）
    ▼
-pages/post/[slug].astro
-   · params: { slug: entry.id }
-   · const { Content } = await render(entry)          ← render() 从 "astro:content" 具名导入
-   · <Layout frontmatter={entry.data}><Content /></Layout>   ← 显式套版式
+jsdmirror CDN 拉每个 .md → 只取 frontmatter（cover / tags / categories / ai_summary）
+   ▼
+逐篇抓 https://blog.518339.xyz/p/<slug>
+   · extractArticle() 用**标签配对**（不是非贪婪正则）取出 <article class="post-content article-container">
+     ── 正文里嵌套着 <article>（solitude-tag 卡片），非贪婪正则会提前截断
+   · absolutize() 把站内根相对 URL 补成绝对 URL
+   ▼
+store.set({ id: slug, data, body, digest })
+   ▼
+getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 Layout）
 ```
 
-要点：
+### 5.1 环境变量
 
-- **Astro 5 起 Markdown 的 `layout:` frontmatter 已被移除**，版式必须像上面这样在页面里手动套。文章 frontmatter **不含** `layout` 字段，写了会被 schema 拒绝或忽略。
-- `entry.slug` 已不存在，一律用 `entry.id`。
-- `entry.render()` 方法形式已移除，改为 `render(entry)` 函数形式。
-- 集合定义在 `src/content.config.ts`（**src 根目录**），必须提供 `loader`，不能再写 `type: "content"`。
+| 变量 | 默认值 | 用途 |
+| --- | --- | --- |
+| `POSTS_REFRESH` | 未设 | `=1` 跳过 30 分钟 TTL 缓存，强制重抓 |
+| `POSTS_STRICT` | 未设 | `=1` 时 RSS 全挂**抛错中止构建**；默认只 warn 并继续 |
+| `POSTS_BLOG` | `https://blog.518339.xyz` | 博客站点根 |
+| `POSTS_CDN` | `https://cdn.jsdmirror.com/gh` | 取 frontmatter 的 CDN 前缀 |
+| `POSTS_REPO` | `kemiao-moretti/meowloge` | 博客源码仓库 |
+| `POSTS_REF` | `main` | 分支 / tag |
+
+### 5.2 降级行为（**不要静默伪装全文**）
+
+正文提取失败时：`body = RSS description`、`truncated = true`、`logger.warn('<slug>: 正文提取失败，降级为 RSS 摘要')`，UI 上在日期旁渲染「仅摘要」胶囊。RSS 两源全挂且本地有缓存时保留旧缓存；无缓存则 warn 并产出空列表（除非 `POSTS_STRICT=1`）。
 
 ## 6. 内容模型
 
-### 6.1 文章 frontmatter schema（`src/content.config.ts`）
+### 6.1 站点信息全部在 `src/collections/site.json`
 
-```yaml
----
-title: "文章标题"                    # 必填
-description: 一句话摘要，显示在列表卡片上    # 必填
-dateFormatted: Jun 6, 2024          # 必填，格式见下
----
-```
+`name` / `logoIcon` / `title` / `description` / `hero{badge,title,subtitle,intro,skills[],cta[]}` / `profile{avatar,since}` / `subscribe{feedUrl,title,description}` / `legal{icp,police,credit}` / `font{name,author,license,url}` / `copyright`。
 
-32 篇文章实测字段完全一致，无 tags / cover / draft 等扩展字段。
+- `profile.avatar` 为 `""` 时 `hero.astro` 渲染 `PlaceholderMedia` 渐变圆；填了路径就渲染 `<img>`。
+- `legal.icp` / `legal.police` 为 `null` 时**整个链接不渲染**（footer 里做了条件判断）。
+- `post.astro` 的 meta description 取 `frontmatter.description || aiSummary || title`。
 
-### 6.2 `dateFormatted` 格式约束
+### 6.2 post collection schema（`src/content.config.ts`）
 
-列表排序靠 `posts-loop.astro:7-10` 手工解析：
+`title` / `description` / `date` / `updated?` / `cover?` / `categories[]` / `tags[]` / `series[]` / `aiSummary?` / `sourceUrl` / `dateFormatted` / `truncated`。
 
-```js
-const [month, day, year] = dateStr.split(" ")      // 按空格切成 3 段
-return new Date(`${month} ${parseInt(day)}, ${year}`)
-```
+`dateFormatted` 由 loader 产出，格式是 **`M/D/YYYY`**（如 `9/22/2026`），与目标站一致；**不要**改回 `<Mon> <day>, <year>` 三段式。
 
-**必须写成 `<Mon> <day>, <year>` 三段式**：`Jun 6, 2024` / `Jun 4th, 2024` 都可以（`parseInt("4th,")` 得到 4），但：
+### 6.3 五个 JSON 集合都是"保留 key、值置 `""`"
 
-- 写成 `2024-06-06` → 切不出 3 段，解析成 `Invalid Date`，排序会乱。
-- 月份缩写要与 JS `Date` 能识别的英文缩写一致（`Jan`…`Dec`）。
+`projects.json` 的 `image`、`sites.json` 的 `screenshot`、`experiences.json` 的 `logo`、`about.json` 的 `photo`、`site.json` 的 `profile.avatar` **都是空串而不是删除**。
 
-### 6.3 加一篇新文章
+原因：Astro 从 JSON 推断出的字面类型**逐字段推断**，删掉 key 会让另外几处 `item.image` 的访问报 `ts(2339) Property 'image' does not exist`（实测一次踩到 7 个错）。空串语义也更好读：**空 = 未设置 → 渲染占位块**。
 
-1. 在 `src/content/post/` 新建 `<slug>.md`，文件名就是访问路径。
-2. 填齐上面 3 个 frontmatter 字段（**不要写 `layout`**）。
-3. 图片建议放 `public/assets/images/posts/`，正文用 `/assets/images/posts/xxx.jpg` 绝对路径引用。
-4. 无需注册路由 —— `getStaticPaths` 自动收集。
+### 6.4 SEO（`src/layouts/main.astro`）
 
-### 6.4 加项目 / 改导航 / 加经历
+`site` 已在 `astro.config.mjs` 配成 `https://home.518339.xyz`，canonical / og / sitemap / robots 全依赖它。输出 `<title>`、`description`、`rel=canonical`、`generator`、`og:type|site_name|locale|title|description|url|image`、`twitter:card|title|description`、`rel=alternate`（RSS）。**换域名时记得同步改 `public/robots.txt` 的 Sitemap 行。**
 
-- 项目：`src/collections/projects.json` 追加 `{name, description, image, url}`。首页只显示前 6 个（`home/projects.astro:21` 的 `slice(0, 6)`），`/projects` 显示全部。
-- 导航：`src/collections/menu.json`。当前路径高亮由 `main.js:136 applyMenuItemClasses()` 在运行时按 `pathname` 匹配添加 class。
-- 经历：`src/collections/experiences.json`，`logo` 指向 `public/assets/images/experiences/` 下的图标。
+`<title>` 规则：首页 = `site.title`；子页 = `` `${title} · ${site.name}` ``。
 
 ## 7. 主题与样式系统
 
-**没有设计 token 层、没有组件库。** 配色全部是 Tailwind 原子类内联在 `class` 里，成对写：
-
-- 浅色：`bg-white` / `text-neutral-900`
-- 深色：`dark:bg-neutral-950` / `dark:text-neutral-{100..400}`
-
-新增任何可见元素时，**必须同时给出 `dark:` 变体**，否则深色模式下会出现白底黑字或不可读文字。
-
-配置全部集中在 `src/assets/css/main.css`（Tailwind v4 的 CSS-first 写法，**没有 `tailwind.config.mjs`**）：
+`src/assets/css/main.css` 是唯一 CSS 文件（Tailwind v4 CSS-first，**没有 `tailwind.config.mjs`**）：
 
 ```css
-@import "tailwindcss";                                    /* 替代 v3 的 @tailwind 三件套 */
-@plugin "@tailwindcss/typography";                        /* 替代 plugins: [require(...)] */
-@custom-variant dark (&:where(.dark, .dark *));           /* 恢复 class 策略的深色模式 */
-@theme { --font-sans: ...; }                              /* 覆盖设计变量 */
-@layer base { button:not(:disabled) { cursor: pointer } } /* 还原 v3 的按钮手型光标 */
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@custom-variant dark (&:where(.dark, .dark *));   /* 恢复 class 策略深色 */
+@theme { --font-sans / --font-serif / --color-brand-* / --radius-* / --shadow-* / --animate-* }
+:root { --hero-offset / --scrollbar-* }           /* 非 Tailwind 命名空间 */
+@layer base { html.dark { color-scheme: dark } ... }
+/* 之后是一批手写的语义类：.homepage-hero / .hero-surface / .frost-panel /
+   .header-shell / .header-surface.is-pill / .footer-shell / .tile-* /
+   .grid-fade / .prose img{border-radius:30px} / #sun / #moon / @keyframes */
 ```
 
-深色模式四处协同，改动要保持一致：
+**设计 token（全部来自目标站实测，改之前先去 `lsf-main.css` 核对）**：
 
-| 机制 | 位置 | 作用 |
-| --- | --- | --- |
-| `@custom-variant dark` | `main.css` | 把 `dark:` 变体绑定到 `.dark` |
-| 防闪烁内联脚本 | `main.astro`（`is:inline`，位于 `<title>` 之后） | 首屏渲染前读 `localStorage.dark_mode` 加 `html.dark` |
-| 切换与动画 | `main.js`（`showDay`/`showNight`） | 写 `localStorage`、切 sun/moon 图标、触发 setting/rising 动画 |
-| 动画 keyframes | `main.css` 尾部 | `.horizon .setting/.rising` |
+| token | 值 |
+| --- | --- |
+| `--radius-inner` / `--radius-card` / `--radius-panel` / `--radius-site` / `--radius-shell` | `1.22rem` / `1rem` / `1.5rem` / `1.55rem` / `2rem` |
+| `--shadow-card` / `--shadow-footer` / `--shadow-header` | 三组 `0 Npx Mpx -Kpx rgb(15 23 42 / 0.a)` |
+| `--hero-offset` | `80px`（header 是 `fixed`，用它把首屏顶下去） |
+| `--scrollbar-thumb`（亮 / 暗） | `#73737347` / `#a3a3a338` |
 
-`localStorage` 的键名是 `dark_mode`，值为字符串 `"true"`；关灯是 `removeItem`（不是存 `"false"`）。
+**深色模式四处协同**，改动要保持一致：`@custom-variant dark`（main.css）→ 防闪烁内联脚本（main.astro，位于 `<title>` 之后）→ 切换逻辑（main.js 的 `showDay`/`showNight`）→ keyframes（main.css 尾部）。
+`localStorage` 键名 `dark_mode`，值字符串 `"true"`；关灯是 `removeItem`（不是存 `"false"`）。
 
-设计语言（改 UI 时沿用）：细虚线边框 `border-dashed`、卡片 hover 双层错位位移（`group-hover:-translate-x-1` + 一张背景层反向 `translate-x-1`）、`rounded-2xl`、`backdrop-blur`、深色底 `neutral-950`。
+**新增任何可见元素必须同时给 `dark:` 变体**，否则深色下会出现白底黑字或不可读文字。
 
-## 8. 已知坑与雷区
+**字体**：正文用朱雀仿宋（OFL-1.1），在 `main.astro` 里引 jsdmirror 上**锁 commit SHA** 的分片 CSS（上游无 tag，`@main` 会漂）。`--font-serif` 首位即该字体名，不要动。
 
-### 8.1 `pnpm install` 在本机会因 esbuild 报 EBUSY
+## 8. 设计语言（改 UI 时沿用）
 
-本机沙箱对子进程 `spawnSync(node.exe)` 有限制，esbuild 的 postinstall（只做版本校验）会抛：
+| 模式 | 做法 |
+| --- | --- |
+| 细虚线边框 | `border border-dashed border-neutral-300 dark:border-neutral-700` |
+| 卡片 hover | 两张绝对定位层反向位移：`group-hover:-translate-x-1` + 另一层 `translate-x-1`，配合 `shadow-lg → shadow-xl` |
+| 光斑 | `pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100`，内含 `-left-6 top-0 h-20 w-20 bg-amber-100/70 blur-2xl` + `-bottom-4 right-0 … bg-sky-100/70 blur-2xl`（暗色 `dark:bg-amber-400/10` / `dark:bg-cyan-400/10`） |
+| 圆角 | 面板 `rounded-panel`(1.5rem) / 卡片 `rounded-2xl` / 内层图 `rounded-inner`(1.22rem) / 胶囊 `rounded-full` |
+| 圆钮 | `flex h-8 w-8 items-center justify-center rounded-full border ... backdrop-blur-sm` + 箭头 `h-3.5 w-3.5 -rotate-45` |
+| eyebrow 小标题 | `text-xs font-semibold uppercase tracking-[0.28em] text-neutral-400` |
+| 区块标题 | 带 emoji：`😃 我的项目` / `😗 我的站点` / `✍🏻 我的文章` |
+| 分隔条文案 | `Projects · 我最近在做什么` / `Sites · 我的在线作品` / `Writings · 我写下来的东西` / `Endnote` |
+| 按钮文案 | `查看所有项目` / `查看所有网站` / `查看所有文章` |
+| 换行裁剪 | Tailwind 内置 `line-clamp-1/2/4`（站点卡标题 1 行、描述 2 行；项目描述 4 行） |
 
+## 9. 已知坑与雷区
+
+### 9.1 `pnpm install` 在本机会因 esbuild 报 EBUSY
+
+本机沙箱对子进程 `spawnSync(node.exe)` 有限制，esbuild 的 postinstall（只做版本校验）会抛 `spawnSync ...node.exe EBUSY`。**已在 `package.json` 声明 `pnpm.neverBuiltDependencies: ["esbuild"]` 规避**（真正的二进制来自 optionalDependency `@esbuild/win32-x64`，随包分发）。sharp 同理。
+
+### 9.2 在本机跑 install / build 必须带 `CODEBUDDY_SAFE_DELETE_ENABLED=0`
+
+本机 `node-safe-delete-shim` 会拦截 Node 的批量删除，而 pnpm 和 Astro 都会在正常流程里清理临时目录：
+
+- `pnpm install` → `[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED] ... EXIT:1`
+- `astro build` → 删 `dist/.prerender/.vite/` 被拦 → `Build failed`（**页面还没开始生成**）
+
+给命令加前缀即可。**同样不要用 `rm -rf dist` 手动清理**（Bash 工具层也有守卫），让 Astro 自己清。
+
+### 9.3 `compressHTML` 必须显式 `true`
+
+Astro 7 默认值从 `true` 改成 `"jsx"`，会像 React 一样剥离标签间空白。**但它同时会剥离属性值引号**（`src="/a.png"` → `src=/a.png`）—— 这就是下面 §9.4 那个「假阴性」的成因。
+
+### 9.4 远程正文的 URL 绝对化必须兼容**无引号属性**（大坑）
+
+博客是 Hugo + minify 输出的，正文里属性值**大多不带引号**：实测 `src=/…` 21 处、`href=/…` 80 处，带引号的只有 2 / 34 处。
+只认 `(["'])/(?!\/)` 的正则会漏掉绝大部分，13 张正文图片全部 404 指向 `http://127.0.0.1:4399/img/...`。
+
+更坑的是：**用 `grep 'src="/' dist/...` 检查产物会返回 0，看起来"已修好"**，因为 `compressHTML` 把引号剥掉了。
+
+```js
+// 正确写法（三形态通吃，统一输出双引号绝对 URL）
+/(\s(?:src|href|poster)=)(?:"([^"]*)"|'([^']*)'|([^\s">]+))/gi
 ```
-Error: spawnSync ...node.exe EBUSY
-ELIFECYCLE Command failed with exit code 1
-```
 
-失败后 pnpm 会中止整次安装，`pnpm list` 仍显示旧版本，看起来像"装了但没生效"。**已在 `package.json` 声明 `pnpm.neverBuiltDependencies: ["esbuild"]` 规避**。esbuild 的真正二进制来自 optionalDependency `@esbuild/win32-x64`，随包分发，跳过脚本无副作用；sharp 同理（`@img/sharp-win32-x64`）。
+**判定标准**只有运行时可信：`probe-images.mjs` 数 `document.images` 的 `naturalWidth > 0`，并要求「正文内相对引用 = 0」。
 
-### 8.2 在本机跑 install / build 必须带 `CODEBUDDY_SAFE_DELETE_ENABLED=0`
+### 9.5 `extractArticle` 必须做标签配对，不能用非贪婪正则
 
-本机有一个 `node-safe-delete-shim`（经 `NODE_OPTIONS` 注入子进程），会拦截 Node 的批量删除动作，而 pnpm 和 Astro 都会在正常流程里清理自己的临时目录：
+正文容器内嵌着 `<article>`（solitude-tag 卡片），非贪婪会提前截断。已实现的深度计数版本见 `blog-posts.ts`。
 
-- `pnpm install`：清理 store 暂存目录时被拦 → `[safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED] ... EXIT:1`
-- `astro build`：删除 `dist/.prerender/.vite/` 时被拦 → `Build failed`（**页面还没开始生成**）
+### 9.6 Biome 读不懂 `.astro` 模板语法
 
-这不是代码问题。给命令加 `CODEBUDDY_SAFE_DELETE_ENABLED=0` 前缀即可（该开关让 shim 直接 return，只作用于这一个进程）。
+它看不到 frontmatter 变量在模板里的使用，会把 `header.astro` 的 `import menus`、`footer.astro` 的 `import Logo` 报成 unused。`biome.json` 已显式关掉 `noUnusedVariables` / `noUnusedImports`（否则 `--unsafe` 会**删掉真实在用的 import**，当场打断导航和页脚），也关掉了 `noImportantStyles`。**不要把这些规则重新打开。**
 
-**同样不要用 `rm -rf dist` 手动清理** —— Bash 工具层也有批量删除守卫会拒绝执行。让 Astro 自己清理输出目录即可（它走 Node fs，放行后就正常）。
+`biome.json` 开了 `css.parser.tailwindDirectives`，否则解析不了 `@import "tailwindcss"` / `@theme` / `@plugin`。
 
-### 8.3 `compressHTML` 必须显式设为 `true`
+### 9.7 Tailwind v4 只产出源码里字面出现的类名
 
-Astro 7 把默认值从 `true` 改成了 `"jsx"`，会像 React 一样剥离标签间空白，把跨行文本拼在一起。`astro.config.mjs` 里已显式写死 `compressHTML: true`，**不要删**。
+JS 里 `classList.add('任意值类')` **不会生成 CSS**。所有运行时切换的类必须是**语义类**，并且要写进 `main.css` 的 `@utility` 块（如 `.is-pill`、`.menu-open`）。
 
-### 8.4 `leading-tight` 在 Tailwind v4 中才真正生效（**已接受的视觉变化**）
+反过来说，**v4 能生成任意数值的 spacing**（v3 只认预设档位）—— `h-100` 在 v3 里无效，在 v4 里是 `25rem`（曾把项目卡撑到 400px 高）。新增 spacing 类时留意。
 
-v3 产物里 `.text-lg{line-height:1.75rem}` 靠源码顺序压掉了 `.leading-tight{line-height:1.25}`；v4 改成 CSS 变量协调（`.text-lg{line-height:var(--tw-leading,...)}`），于是 `leading-tight` 终于按作者本意生效。
+### 9.8 `rounded-full` 的计算值不是 `9999px`
 
-后果：卡片标题行高 28px → 22.5px，`/posts` 整页矮 176px（32 张卡 × 5.5px），首页矮 17px（3 张卡）。这是升级后唯一残留的布局差异来源。
+Tailwind v4 里是 `border-radius: calc(infinity * 1px)`，`getComputedStyle` 实测返回 **`2.23696e+07px`**。写 CDP 断言 / 选择器时如果判 `=== "9999px"`，会**恒不命中、静默返回 null**，很容易伪装成「两边都是 null，通过」。用 `parseFloat(...) > 100`。
 
-如需还原 v3 表现，把 `posts-loop.astro` 里 `text-lg` 那处的 `leading-tight` 删掉，或改成 `leading-[1.75rem]`。
+### 9.9 `leading-tight` 在 v4 中才真正生效（**已接受的视觉变化**）
 
-### 8.5 `main.css` 的自定义规则现在才真正作用于文章页（**已接受的视觉变化**）
+v3 产物里 `.text-lg{line-height:1.75rem}` 靠源码顺序压掉了 `.leading-tight{line-height:1.25}`；v4 改成 CSS 变量协调，于是 `leading-tight` 终于按作者本意生效。这是升级后唯一残留的布局差异来源。
 
-升级前，文章页只加载了 `_astro/about.*.css`，**没加载含 `main.css` 的那个 CSS 文件**，导致 `.prose img{border-radius:30px}`、日夜切换 keyframes、`html.dark{color-scheme:dark}` 在文章页全部失效（既有 bug）。升级后 CSS 合并为单文件全量加载，这些规则开始生效 —— 文章配图从直角变成 30px 圆角。
+### 9.10 `main.css` 的自定义规则现在才真正作用于文章页（**已接受的视觉变化**）
 
-另外 `layouts/post.astro` 里那个 `<style> .prose img { border-radius: 20px }` 是**死代码**：Astro 会把它编译成 scoped 选择器 `.prose[data-astro-cid-x] img[data-astro-cid-x]`，而 Markdown 渲染出的 `img` 不带 scoped 属性，永远匹配不到。实际生效的是 `main.css` 的 30px。
+升级前文章页**没加载含 `main.css` 的那个 CSS 文件**，`.prose img{border-radius:30px}`、日夜切换 keyframes 全部失效（既有 bug）。升级后 CSS 合并为单文件全量加载，这些规则开始生效。
 
-### 8.6 文章页版式靠"手动套 Layout"
+`layouts/post.astro` 里那个 `<style> .prose img { border-radius: 20px }` 是**死代码**：Astro 编译成 scoped 选择器 `.prose[data-astro-cid-x] img[data-astro-cid-x]`，而 Markdown 渲染出的 `img` 不带 scoped 属性。实际生效的是 `main.css` 的 30px。
 
-见 §5。若误删 `[slug].astro` 里的 `<Layout>` 包裹，文章会渲染成无导航、无样式的裸 HTML。
+### 9.11 `main.js` 顶层直接挂事件监听
 
-### 8.7 剩余的两个无效类名（上游遗留，不影响功能）
+它在 `main.astro` 里以 `<script>import "../assets/js/main.js";</script>` 加载，被编译成 `type="module"`（延迟执行，DOM 已就绪）。**改成 `is:inline` 会拿不到元素而报错。**
 
-实测这些类**没有生成任何 CSS**（静默失效，不报错）：
+顺带：Astro 5 起 `<script>` 不再被提升到 `<head>`、`<style>` 会被提取进 CSS bundle —— 产物 head 里看不到它们是正常的。
 
-| 类名 | 位置 | 问题 |
-| --- | --- | --- |
-| `trackign-widest` | `components/about-experience.astro:13` | 拼写错误，应为 `tracking-widest` |
-| `dm:mx-0` | `components/header.astro:52` | `dm` 不是有效屏幕前缀 |
+### 9.12 环境变量注入位
 
-注意 `h-100` 已从 `project.astro` 移除：它在 v3 里无效，但 **v4 的动态间距会把它解释成 25rem**，会把项目卡片撑到 400px 高。以后新增 spacing 类时留意这一点 —— v4 能生成任意数值，v3 只认预设档位。
-
-### 8.8 `main.js` 顶层直接挂事件监听
-
-`main.js` 里 `document.getElementById("darkToggle").addEventListener(...)` 在**模块顶层**执行（不在 `DOMContentLoaded` 回调里）。它能工作是因为它在 `main.astro` 里以 `<script>import "../assets/js/main.js";</script>` 的形式加载，被编译成 `type="module"`（延迟执行，DOM 已就绪）。**如果改成 `is:inline`，会拿不到元素而报错。**
-
-顺带：Astro 5 起 `<script>` 不再被提升到 `<head>`，`<style>` 会被提取进 CSS bundle —— 所以产物 head 里看不到它们，是正常的。
-
-### 8.9 缺 RSS、sitemap、SEO meta
-
-- 无 `@astrojs/rss`、无 `@astrojs/sitemap`，`astro.config.mjs` 里**没有配 `site`**（加 RSS 前必须先配）。
-- `main.astro` 的 `<head>` 只有 `<title>`，没有 `description`/`og:*`/`twitter:*` —— 分享卡片会没有摘要。
-- `public/robots.txt` 只有 `Allow: /`，没有 sitemap 指向。
-- `home/writings.astro:5` 的订阅表单指向**上游作者的** feed，需替换或删除。
-
-### 8.10 环境变量注入位未使用
-
-`main.astro` 里预留了两个 HTML 注入点（上游用于塞 Cloudflare 统计等）：
+`main.astro` 预留了两个 HTML 注入点：
 
 ```astro
 <Fragment set:html={import.meta.env.HEADER_INJECT} />
@@ -277,95 +305,121 @@ v3 产物里 `.text-lg{line-height:1.75rem}` 靠源码顺序压掉了 `.leading-
 
 当前无 `.env`、无值，输出为空。注意 Astro 6 起 `import.meta.env` 的值不再自动做类型转换（`"true"` 不会变 boolean）。
 
-### 8.11 文章正文图片全是外链
+### 9.13 升级大版本后必须手动杀掉旧的 dev server
 
-`src/content/post/*.md` 的配图指向 `static.miantiao.me` / `github.html.zone`。这些域名在本机网络下经常取不到，**做视觉对比时不要把它当成布局回归** —— 先确认两边 `document.images` 的加载数是否一致。
-
-### 8.12 升级大版本后必须手动杀掉旧的 dev server
-
-报错形态（注意 **"See full stack trace in the browser"** —— 这是 dev server 的 Vite 错误浮层，构建不会触发）：
+报错形态（**"See full stack trace in the browser"** = dev server 的 Vite 错误浮层，构建不会触发）：
 
 ```
-16:12:05 [ERROR] __vite_ssr_import_0__.createCollectionToGlobResultMap is not a function
+[ERROR] __vite_ssr_import_0__.createCollectionToGlobResultMap is not a function
   at node_modules/.pnpm/vite@5.2.11/node_modules/vite/dist/node/chunks/dep-cNe07EU9.js
 ```
 
-`createCollectionToGlobResultMap` **只存在于 astro@4**（定义在 `astro/content-module.template.mjs` 与 `dist/content/runtime.js`），astro@7 已彻底移除。
-
-**根因**：升级**之前**就启动着的 `astro dev`，其进程内存里仍是 Astro 4 + Vite 5 的模块。文件（尤其是 `src/content/config.js` 被删、`src/content.config.ts` 新增）被改动后触发 HMR 重编译，新模块从 `node_modules/astro`（此时已是 7.3.5）里找这个函数 → 找不到。**进程不会因报错自己退出**，必须手动杀。
+`createCollectionToGlobResultMap` **只存在于 astro@4**。根因是升级**之前**就启动着的 `astro dev` 内存里还是旧模块，**进程不会因报错自己退出**。
 
 ```bash
 netstat -ano | grep ':4321'      # 拿监听 PID
 taskkill //F //PID <pid> //T     # //T 连带子进程
 ```
 
-**判断依据是栈里的 vite 版本**：显示 `vite@5.2.11` 一定是旧进程（Astro 7 用 vite 8）。杀掉后用同一个命令重启即可，代码不用动。
+**判断依据是栈里的 vite 版本**：显示 `vite@5.2.11` 一定是旧进程（Astro 7 用 vite 8）。
 
-**副产物也要清**：`node_modules/.pnpm/` 里会残留整套旧版本树（本项目实测残留 `astro@4.8.2`、`vite@5.2.11`、`tailwindcss@3.4.3`、`typescript@5.4.5`、`@astrojs+tailwind@5.1.0`、`@astrojs+check@0.6.0`、`@astrojs+language-server@2.9.0`、`@volar+kit@2.2.2`、`tsconfck@3.0.3` 共 9 个）。**`pnpm install` 报 "Already up to date" 时不会清理它们**（`--force` 也不保证）。
+### 9.14 瓷砖背景必须套在裁剪容器里
 
-这些孤儿是惰性的（根级软链决定在用的版本），但会误导排查。清理前先核对根级软链：
+目标站层级是 `.tile-grid` → `.tile-region-shell` → **`div.pointer-events-none.absolute.inset-x-0.top-0.-z-10.overflow-hidden`** → `body`。
+少这一层的话，768px 高的 shell 会留在文档流里，把首屏顶下去约 600px，并且不裁剪横向溢出。**改 `tile-grid.astro` 时不要把这个外层 div 去掉。**
 
-```bash
-readlink -f node_modules/astro       # 应指向 astro@7.3.5
-readlink -f node_modules/typescript  # 应指向 typescript@5.9.3
-```
+### 9.15 中文 logo 需要 `shrink-0 whitespace-nowrap`
 
-确认无误后，删掉名字里带 `_typescript@5.4.5` 后缀 / 属于 astro4 生态的那些目录。**注意 `rm -rf` 会被本机批量删除守卫拦截**，用 Node fs 精确删除：
+目标站 logo 是拉丁文 `LIUSHEN`（`min-content` = 整词）；中文可任意两字间断行，`min-content` 只有一字宽，会被 header 里 `w-full` 的 nav 挤成竖排两行。
 
-```bash
-node -e 'require("fs").rmSync("node_modules/.pnpm/astro@4.8.2_typescript@5.4.5",{recursive:true,force:true})'
-```
+### 9.16 「Endnote」是**包裹页脚的 section**，不是分隔条
 
-## 9. 常见改造任务速查
+目标站 body 层级：`…内容 section… → <section class="relative z-20 mt-16 px-5 pb-10 sm:mt-20 md:px-0">` → `div.mx-auto.max-w-6xl` → [`div.relative.px-1`（渐变发丝线 + Endnote 胶囊）] + **`<footer>`**。
+`main.astro` 里是 `<Endnote><Footer /></Endnote>`；`footer.astro` 因此**不能**再自带 `mx-auto w-full max-w-6xl px-7 lg:px-0` 外框（改由 section 提供 `px-5 md:px-0`）。
+
+### 9.17 「文章区块的 `mt-10` 必须在外层 div 上」
+
+目标站是 `div.mx-auto.mt-10.w-full.max-w-6xl > div.grid.items-start.gap-7.lg:grid-cols-[minmax(0,1fr)_320px]`。
+把 `mt-10` 并到 `div.grid` 上会得到 40px vs 0px 的偏差（CDP 判定表会直接抓到）。
+
+## 10. 常见改造任务速查
 
 | 想做的事 | 改哪里 |
 | --- | --- |
-| 改站点名 / Logo | `components/logo.astro:10`（文字）、`components/footer.astro:15`（版权） |
-| 改首页标题与自我介绍 | `pages/index.astro:9`（title）、`:18-37`（文案） |
-| 换首页头像 | `public/assets/images/photo.png`（同名覆盖，`index.astro:57` 引用） |
-| 改社交链接 | `components/footer.astro`（3 个 `<a href>`）、`pages/index.astro:37`（按钮） |
-| 加文章 | 新建 `src/content/post/<slug>.md`，见 §6.1 |
-| 加项目 | `src/collections/projects.json` |
-| 改导航 | `src/collections/menu.json` |
-| 改工作经历 | `src/collections/experiences.json` |
-| 改 About 页 | `pages/about.astro` |
+| 改站点名 / Logo 图标 | `collections/site.json` 的 `name` / `logoIcon` |
+| 改首屏文案 / 标签 / 按钮 | `collections/site.json` 的 `hero.*` |
+| 换首屏头像 | `collections/site.json` 的 `profile.avatar`（填 URL 或 `/assets/images/xxx.png`）；留空则渲染渐变占位圆 |
+| 改 About 页文案 | `collections/about.json` |
+| 加 / 改项目 | `collections/projects.json`（`image` 留空 → 渐变占位） |
+| 加 / 改站点卡 | `collections/sites.json`（`screenshot` 留空 → 渐变占位） |
+| 改工作经历 | `collections/experiences.json`（`logo` 留空 → 首字母占位圆） |
+| 改导航 | `collections/menu.json` |
+| 改社交链接 | `collections/social.json`（按 `group` 分组渲染） |
+| 改备案号 | `collections/site.json` 的 `legal.icp`（设 `null` 即隐藏） |
+| 登文章（本地改不到） | 去博客仓库 `kemiao-moretti/meowloge` 的 `content/posts/` 加 md，然后 `POSTS_REFRESH=1 pnpm build` |
 | 改主题色 / 字体 | `src/assets/css/main.css` 的 `@theme` 块 |
-| 加 RSS | 先给 `astro.config.mjs` 加 `site`，再装 `@astrojs/rss` 并新建 `src/pages/rss.xml.js` |
+| 改占位块外观 | `src/components/placeholder-media.astro`（全站唯一入口） |
 
-## 10. 代码规范
+## 11. 代码规范
 
-- **Biome 2.5.14** 说了算：`pnpm check`（= `biome check --write --unsafe .`，会直接改写文件）。当前 `biome check .` 已无 lint 错误。
-- ⚠️ **Biome 读不懂 `.astro` 的模板语法**：它看不到 frontmatter 变量在模板里的使用，会把 `header.astro` 的 `import menus`、`footer.astro` 的 `import Logo` 报成 "unused import"。`biome.json` 已显式关掉 `noUnusedVariables` / `noUnusedImports`（否则 `--unsafe` 会**删掉真实在用的 import**，直接打断导航和页脚），也关掉了 `noImportantStyles`（主 CSS 里有一处作者有意写的 `!important`）。**不要把这些规则重新打开。**
-- `biome.json` 开了 `css.parser.tailwindDirectives`，否则 Biome 解析不了 `@import "tailwindcss"` / `@theme` / `@plugin` 这些 v4 指令。
-- `.astro` / `.js` 用 **2 空格**缩进，`.json` 配置用 **tab**（照抄现有文件即可）。
+- **Biome 2.5.14** 说了算。当前 `biome check .` 无诊断。
+- `.astro` / `.js` 用 **2 空格**缩进，`.json` 用 **tab**。
 - 换行符 LF、UTF-8、无行尾空格裁剪（`.editorconfig`）。
-- 组件一律用 `Astro.props` 解构，不写默认值（`square.astro` 的 `classes = ""` 是唯一例外）。
+- 组件用 `Astro.props` 解构，需要默认值就写在解构里。新增可见元素**必须给 `dark:` 变体**。
 - 样式只写 Tailwind 类，不新增 `.css` 文件，不引入 UI 库或客户端框架。
-- 交互 JS 集中在 `src/assets/js/main.js`，函数挂到 `window` 上供内联 `onclick` 调用（如 `closeMobileMenu()`）。
-- 代码风格：少注释、直给。不加 `/* Add Your Custom CSS Here */` 这类占位注释。
+- 交互 JS 集中在 `src/assets/js/main.js`，函数挂到 `window` 供内联 `onclick` 调用。
+- 代码风格：少注释、直给。**不加解释性注释**，只在「不写就会被后人踩」的地方留一行说明（见 `blog-posts.ts` 的 `absolutize` / `extractArticle`）。
 
-## 11. 验证基线（2026-09-25 实测）
+## 12. 验证方法（本机）
 
-- `CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm install` → 成功（首次约 2.5 分钟，缓存后约 5 秒）。
-- `astro check` → **26 files / 0 errors / 0 warnings / 0 hints**。
-- `astro build` → **36 个页面**全部生成，`Complete!`，退出码 0。产物 `dist/` 根目录干净（`_astro about assets favicon.ico index.html post posts projects robots.txt`），无残留服务端产物。
-- `biome check .` → 34 files，无诊断（`No fixes applied`）。
-- 产物 CSS：单个 `_astro/main.*.css`，约 69 KB。
-- 交互（CDP 真实点击验证）：深色切换写入/清除 `localStorage.dark_mode` ✓、滚动吸顶切换 `fixed`/`top-[56px]` ✓、移动端菜单开/关/点遮罩关闭 ✓、导航当前项高亮 ✓。
-- 视觉回归（对比升级前产物，图片加载状态对齐后）：`/about`、`/projects`、`/post/*` 页面高度**完全一致**；`/posts` −176px、首页 −17px，差异 100% 来自 §8.4 的 `leading-tight`。
+**首选原生 CDP 探针**（Node 22 自带全局 `WebSocket`，不需要 puppeteer）：
 
-改完代码后的自检顺序：`CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm build` 看 36 个页面是否列全 → `pnpm preview` 打开 `/`、`/posts`、`/post/<任一>`、`/about`、`/projects` → 手动切一次深色模式 → 缩窄窗口（<640px）验证汉堡菜单。
+```bash
+# 1. 起静态服务（用 run_in_background: true + exec，否则子进程随命令结束被回收）
+cd homepage/homepage/dist && python -m http.server 4399 --bind 127.0.0.1
 
-## 12. 升级记录（4.8.2 → 7.3.5）
+# 2. 跑探针
+node .workbuddy/tmp/verify-b3.mjs  http://127.0.0.1:4399   # 交互回归 22 项
+node .workbuddy/tmp/verify-b8.mjs                            # 视觉判定表 152 项 + 截图
+node .workbuddy/tmp/probe-images.mjs                         # 图片加载 + 相对引用
+```
 
-跨了 Astro 5/6/7 三个大版本 + Tailwind 3→4 重写，分支 `chore/astro7-upgrade`。主要改动：
+Chrome 在 `C:/Users/Administrator/.cache/puppeteer/chrome/win64-131.0.6778.204/chrome-win64/chrome.exe`，用 `--headless=new --remote-debugging-port=N --user-data-dir=<temp> --no-sandbox --disable-gpu` 启动。
+
+**写跨站断言的三条纪律**（踩过的坑，见 `verify-b8.mjs`）：
+
+1. **不要用绝对文档坐标做比较** —— `getBoundingClientRect().top` 会因文案长度不同累积偏移（实测 Δ 达 −709px）。用**相对量**，如 `aside.bottom − 描述.bottom`。
+2. **不要拿"卡片盒子的宽高比"当结构指标** —— 那是内容驱动的。取**卡内第一个 `aspect-ratio !== 'auto'` 的元素**当封面容器。
+3. **图片加载数是「假回归」高发区** —— 必须滚动到页底触发懒加载再数；外链图床失败不算布局回归。
+
+长任务一律：`cmd > .workbuddy/tmp/x.log 2>&1` + `run_in_background: true`，**不要管道给 `tail`/`head`**（外壳被回收会连子进程一起带走）。
+
+## 13. 升级记录（Astro 4.8.2 → 7.3.5 + Tailwind 3 → 4）
+
+跨了 Astro 5/6/7 三个大版本 + Tailwind 3→4 重写，提交 `f7790e7`。主要改动：
 
 | 类别 | 改动 |
 | --- | --- |
-| 依赖 | astro 7.3.5、tailwindcss 4.3.3、@tailwindcss/vite 4.3.3、@astrojs/check 0.9.10、typescript 5.9.3、biome 2.5.14；**移除** `@astrojs/tailwind`（其 peer 最高只到 Astro 5） |
+| 依赖 | astro 7.3.5、tailwindcss 4.3.3、@tailwindcss/vite 4.3.3、@astrojs/check 0.9.10、typescript 5.9.3、biome 2.5.14；**移除** `@astrojs/tailwind` |
 | 集合 | `src/content/config.js` → `src/content.config.ts`；`type: "content"` → `glob()` loader；`z` 改从 `astro/zod` 导入 |
-| 文章 | 32 篇删除失效的 `layout:` frontmatter；`[slug].astro` 改用 `entry.id` + `render(entry)` + 显式套 Layout |
-| 样式 | `@tailwind` 指令 → `@import "tailwindcss"`；删 `tailwind.config.mjs`；`darkMode: "class"` → `@custom-variant`；`flex-shrink-0`→`shrink-0`、`shadow-sm`→`shadow-xs`、`backdrop-blur-sm`→`backdrop-blur-xs`；移除 `h-100`；`@theme` 锁定 v3 字体栈、还原按钮 cursor |
-| 布局 | `main.astro`：CSS 改为 frontmatter `import`，JS 改为 `<script>import</script>`（Astro 5 起 script 不再提升/打包）；favicon 改绝对路径（原先所有子页面 404） |
-| 组件 | `square.astro` 修掉把 `{classes}` 当字面量输出的 bug |
-| 配置 | `astro.config.mjs` 加 `compressHTML: true` 与 vite tailwind 插件；`tsconfig.json` 加 `include`/`exclude`；`.node-version` → `22.12.0`；`package.json` 加 `pnpm.neverBuiltDependencies`；`biome.json` 用官方 `biome migrate` 迁到 2.x 并开 `tailwindDirectives` |
+| 样式 | `@tailwind` 指令 → `@import "tailwindcss"`；删 `tailwind.config.mjs`；`darkMode: "class"` → `@custom-variant`；`flex-shrink-0`→`shrink-0`、`shadow-sm`→`shadow-xs`、`backdrop-blur-sm`→`backdrop-blur-xs`；移除 `h-100` |
+| 布局 | `main.astro`：CSS 改 frontmatter `import`，JS 改 `<script>import</script>`；favicon 改绝对路径（原先子页面全 404） |
+| 配置 | `astro.config.mjs` 加 `compressHTML: true` 与 vite tailwind 插件；`tsconfig.json` 加 `include`/`exclude`；`.node-version` → `22.12.0`；`biome.json` 用官方 `biome migrate` 迁到 2.x 并开 `tailwindDirectives` |
+
+## 14. 视觉复刻的权威依据
+
+- 目标站快照：`E:/CSharp/Temp/lsf.html`（105,764 B）、`E:/CSharp/Temp/lsf-main.css`（97,068 B）
+- 字体分片 CSS 快照：`E:/CSharp/Temp/zq.css`（61,606 B，锁 SHA 版本）
+- 探针与判定表：`E:/kemiao-kmoretti/homepage/.workbuddy/tmp/{verify-b3,verify-b8,probe-images}.mjs`
+- 截图：`.../tmp/b8/`（两站四路由 × 亮暗）、`.../tmp/final/`（本站视口截图）
+
+**目标站卡片 DOM 结构（逐段抓取的原文）**：
+
+| 组件 | 关键类与结构 |
+| --- | --- |
+| 文章卡 | `<div class="group relative flex cursor-pointer rounded-2xl border border-dashed border-transparent bg-white/90 p-7 dark:bg-neutral-900/85">` → `z-[25]` 光斑 / `z-20` 白面（hover 左上抽 + `border-solid`）/ `z-10` 虚线底（hover 右下抽 + `shadow-lg→xl`）→ `relative z-30` 内含 `aspect-[4/1]` 封面（`sm:block`，`rounded-xl`）+ `h2` + 描述 + `发布于：M/D/YYYY`。**整卡可点** |
+| 项目卡 | `<a class="… flex h-full flex-row items-center rounded-2xl bg-white/90 p-7 sm:p-3 dark:bg-neutral-900/85">`，`w-1/3` 图（`aspect-[16/9] rounded-lg`）+ `w-2/3` 文（描述 `line-clamp-4`） |
+| 站点卡 | 外层 `rounded-[1.55rem] p-3 shadow-[0_16px_40px_-34px_…] hover:-translate-y-1` + 内层 `aspect-[1782/971] rounded-[1.22rem] overflow-hidden` + 左上域名胶囊（`h-1.5 w-1.5 bg-emerald-500` + `font-mono tracking-[0.16em]`）+ 右上 `h-8 w-8` 箭头钮 + `pt-3.5` 文案区（标题 `line-clamp-1` / 描述 `line-clamp-2`） |
+| helper aside | `rounded-[1.5rem] border-dashed px-4 py-4 shadow-sm backdrop-blur-sm`；项目/文章 `md:max-w-[18.5rem]`、站点 `md:max-w-[18rem]`；内含 `line-clamp-1` 标题 + `line-clamp-2` 正文 + `h-8 w-8` 箭头圆钮 |
+| 区块网格 | 项目 `mt-10 grid w-full items-stretch gap-7 md:grid-cols-2`；站点 `mt-9 grid w-full gap-5 sm:grid-cols-2 xl:grid-cols-3`；文章见 §9.17 |
+| CTA 容器 | 项目/站点 `flex w-full items-center justify-center pt-8 pb-3`；文章 `pt-3 pb-3` |
