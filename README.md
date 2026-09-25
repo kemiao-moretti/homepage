@@ -47,3 +47,44 @@ POSTS_REFRESH=1 CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm build
 
 构建产物是纯静态站点，`dist/` 直接丢到任意静态托管即可。
 换域名时需同步修改 `astro.config.mjs` 的 `site` 与 `public/robots.txt` 的 Sitemap 行。
+
+当前走 **GitHub Actions → Cloudflare Pages（Direct Upload）**：push 到 `main`
+或在 Actions 页面手动触发，`.github/workflows/deploy.yml` 会装依赖、构建、
+把 `dist/` 推上去。**Pages 项目由工作流自己创建**，不需要先在 Cloudflare
+控制台点「创建项目」，也不要开它的 Git 集成（两条链路同时部署会互相覆盖）。
+
+### 首次启用
+
+1. **建 API Token** —— 打开 [API Tokens](https://dash.cloudflare.com/profile/api-tokens) →
+   Create Token → Get started（自定义）：
+   - Permissions：`Account` · `Cloudflare Pages` · `Edit`（就这一条，别加 DNS / Workers / SSL）
+   - Account Resources：Include → 你的账号
+   - 创建后立刻复制，页面关掉就再也看不到
+
+2. **拿 Account ID** —— Workers & Pages 页面右侧栏的 `Account ID`，32 位十六进制。
+
+3. **写进仓库** —— Settings → Secrets and variables → Actions → **Secrets** 页
+   （不是 Variables 页）→ New repository secret，名字必须一字不差：
+
+   | Secret | 值 |
+   | --- | --- |
+   | `CLOUDFLARE_API_TOKEN` | 第 1 步的令牌 |
+   | `CLOUDFLARE_ACCOUNT_ID` | 第 2 步的 ID |
+
+4. **跑一次** —— push 一个提交到 `main`，或者 Actions → Deploy → Run workflow。
+   工作流会自动创建 `kemiao-homepage` 项目并完成首次部署，
+   地址 `https://kemiao-homepage.pages.dev`。
+
+### 绑定自定义域名
+
+Pages 项目 → Custom domains → Set up a domain → 填 `home.518339.xyz`。
+域名已经托管在 Cloudflare 的话会自动补 DNS 记录并签证书，等几分钟生效。
+
+注意 `astro.config.mjs` 里的 `site` 仍是 `https://home.518339.xyz`，
+所以在绑好自定义域名之前，`*.pages.dev` 访问到的页面里 canonical / sitemap
+指向的都是正式域名 —— 这是预期行为。
+
+### 手动触发与回滚
+
+- 重建（比如博客发文后想让文章同步过来）：Actions → Deploy → Run workflow
+- 回滚：Cloudflare 控制台 → 该项目 → Deployments → 选中历史版本 → Rollback，不用重新构建

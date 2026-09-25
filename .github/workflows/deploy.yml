@@ -1,0 +1,119 @@
+name: Deploy
+
+# 只做一件事：把 main 的结果推到 Cloudflare Pages 的生产环境。
+# 页面是纯静态的，Cloudflare 那边的项目由工作流自己建（第一次跑的时候），
+# 不需要先在控制台点过「创建项目」，也不要开它的 Git 集成。
+#
+# 想加分支 / PR 预览的话：on 里放开 pull_request，并把下面的
+# --branch 换成 ${{ github.head_ref }}，同一套命令就会产出预览部署。
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 同一时间只允许跑一次生产部署，后推的提交直接顶掉还在跑的那次。
+concurrency:
+  group: pages-production
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  # wrangler-action 靠它写 GitHub Deployment 记录，少了会 403。
+  deployments: write
+
+env:
+  # 必须和所创建的项目名一致，决定 <name>.pages.dev，改名得删项目重建。
+  PROJECT_NAME: kemiao-homepage
+  PRODUCTION_BRANCH: main
+
+jobs:
+  deploy:
+    name: Build & deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      # 密钥没配就立刻报错，并说清楚去哪儿配。否则要等构建跑完才甩一个
+      # "Project not found"，看不出到底是没密钥还是项目真没建。
+      - name: 检查 Cloudflare 密钥
+        run: |
+          missing=""
+          [ -n "$CLOUDFLARE_API_TOKEN" ] || missing="$missing CLOUDFLARE_API_TOKEN"
+          [ -n "$CLOUDFLARE_ACCOUNT_ID" ] || missing="$missing CLOUDFLARE_ACCOUNT_ID"
+          if [ -n "$missing" ]; then
+            echo "::error title=缺少仓库密钥::未配置$missing，配置方式见 README 的「部署」一节"
+            exit 1
+          fi
+
+      # 不写 version —— action 会读 package.json 的 packageManager 字段（pnpm@9.12.2）。
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      # 文章是构建时从博客 RSS 抓的，干净的 runner 上没有任何缓存。
+      # 存住上一次的内容快照：RSS 或 CDN 临时抽风时构建能退回上一次的数据，
+      # 而不是直接失败（或更糟：把线上文章列表清空）。
+      # key 里带 run_id 是为了每次都写回一份新快照，否则命中后就再也不会更新。
+      - name: Restore content cache
+        uses: actions/cache@v6
+        with:
+          path: .astro/data-store.json
+          key: content-${{ hashFiles('src/loaders/**', 'src/collections/**', 'src/content.config.ts') }}-${{ github.run_id }}
+          restore-keys: |
+            content-${{ hashFiles('src/loaders/**', 'src/collections/**', 'src/content.config.ts') }}-
+            content-
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # pnpm build = astro check + astro build。
+      # POSTS_STRICT=1 让远端两源全挂时直接失败，宁可这次不部署，也不发布空列表。
+      - name: Build
+        run: pnpm build
+        env:
+          POSTS_STRICT: "1"
+
+      # 项目不存在就建，已存在会报 already exists —— 忽略掉即可，所以关掉错误中断。
+      # 这一步只看「项目在不在」，真正的部署失败会由下一步明确报出来。
+      - name: Ensure Pages project
+        uses: cloudflare/wrangler-action@v4
+        continue-on-error: true
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages project create ${{ env.PROJECT_NAME }} --production-branch=${{ env.PRODUCTION_BRANCH }}
+
+      - name: Deploy
+        id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name=${{ env.PROJECT_NAME }} --branch=${{ env.PRODUCTION_BRANCH }}
+          # 传了才会生成 GitHub Deployment 记录和提交上的状态标记。
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
+        run: |
+          {
+            echo "### 已部署到 Cloudflare Pages"
+            echo
+            echo "| | |"
+            echo "| --- | --- |"
+            echo "| 地址 | ${DEPLOYMENT_URL:-https://${PROJECT_NAME}.pages.dev} |"
+            echo "| 部署 ID | ${DEPLOYMENT_ID:-未取到} |"
+            echo "| 提交 | \`${{ github.sha }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
