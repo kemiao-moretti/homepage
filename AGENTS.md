@@ -70,13 +70,13 @@ src/
 │  └─ js/main.js              # 全部交互：深色模式、吸顶头部、移动端菜单、导航高亮、复制订阅地址
 ├─ collections/               # 【注意】纯 JSON 数据，不是 Astro Collections
 │  ├─ site.json               # ⭐ 站点身份 + 首屏：name/title/description/hero/profile/subscribe/legal/font
-│  ├─ pages.json              # ⭐ 页面与区块文案：common（全站微文案）/ home（三区块）/ posts·projects·sites·about（各页 meta+heading）
+│  ├─ pages.json              # ⭐ 页面与区块文案：common（全站微文案）/ home（三区块）/ posts·projects·sites（各页 meta+heading）
+│  ├─ about.json              # ⭐ About 页全部内容：heading / glance / cards / dream / journey / contact（见 §6.8）
 │  ├─ menu.json               # 导航项 [{name, url}]
 │  ├─ social.json             # 页脚社交链接，按 group 分组
 │  ├─ projects.json           # 项目卡片（现为占位骨架）
 │  ├─ sites.json              # 友站 / 其他站点卡片
-│  ├─ experiences.json        # 工作经历（现为占位骨架）
-│  └─ about.json              # About 页正文文案 + 链接
+│  └─ experiences.json        # About 页时间线条目 [{dates, role, company, description, icon}]
 ├─ content.config.ts          # 唯一的 collection 定义（blogPostsLoader）——在 src/ 根，不在 src/content/ 里
 ├─ loaders/blog-posts.ts      # ⭐ 远程文章管道：RSS → 仓库文件树 → 正文抓取 → 绝对化
 ├─ layouts/
@@ -101,7 +101,9 @@ src/
 │  ├─ button.astro / badge.astro / page-heading.astro
 │  ├─ arrow-icon.astro        # 标题右侧的 hover 滑入箭头（opacity-0 → 100）
 │  ├─ arrow-icon-glyph.astro  # 圆钮里的静态箭头
-│  ├─ about-experience.astro  # 单条工作经历
+│  ├─ about-timeline.astro    # About 页时间线：**两套 DOM**（桌面中轴交替 + 移动左轴，见 §6.8）
+│  ├─ about-timeline-card.astro # 时间线条目卡（两套 DOM 共用）
+│  ├─ icon.astro              # ⭐ 内置 lucide 图标映射，JSON 里写 icon 名即可
 │  └─ home/{projects,sites,writings}.astro   # 首页三个内容区块
 └─ pages/
    ├─ index.astro             # /
@@ -180,9 +182,9 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 
 想改回站内阅读：`posts-loop.astro` 的 `href` 换回 `` `/post/${post.id}` `` 并去掉 `external`，同时删掉 `post.astro` 里那行 `canonical={frontmatter.sourceUrl}`。
 
-### 6.4 五个 JSON 集合都是"保留 key、值置 `""`"
+### 6.4 需要图片的 JSON 一律"保留 key、值置 `""`"
 
-`projects.json` 的 `image`、`sites.json` 的 `screenshot`、`experiences.json` 的 `logo`、`about.json` 的 `photo`、`site.json` 的 `profile.avatar` **都是空串而不是删除**。
+`projects.json` 的 `image`、`sites.json` 的 `screenshot`、`about.json` 的 `glance.image`、`site.json` 的 `profile.avatar` **都是空串而不是删除**。
 
 原因：Astro 从 JSON 推断出的字面类型**逐字段推断**，删掉 key 会让另外几处 `item.image` 的访问报 `ts(2339) Property 'image' does not exist`（实测一次踩到 7 个错）。空串语义也更好读：**空 = 未设置 → 渲染占位块**。
 
@@ -204,8 +206,9 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 | 首页区块间分隔条胶囊 | `pages.json` → `home.<区块>.divider.{label,href}` |
 | 内页 `<title>` / meta description / 页头 | `pages.json` → `<页面>.meta` / `<页面>.heading` |
 | 全站微文案（`发布于：`、`仅摘要`、空列表提示、`感谢驻足`、`日间`/`夜间`、`Endnote`、`复制订阅地址`、文章页固定句） | `pages.json` → `common` |
-| About 页正文 | `about.json` |
-| 项目 / 站点 / 经历 / 社交 / 导航 | 各自的 `projects.json` / `sites.json` / `experiences.json` / `social.json` / `menu.json` |
+| About 页整页（页头·AT A GLANCE·两张卡网格·梦想·时间线·联系） | `about.json` |
+| About 页时间线的每段经历 | `experiences.json`（`icon` 填 lucide 名，留空 → 首字占位） |
+| 项目 / 站点 / 社交 / 导航 | 各自的 `projects.json` / `sites.json` / `social.json` / `menu.json` |
 
 **只改值，不要删 key。** 理由同 §6.4：Astro 从 JSON 推断的是**逐字段字面类型**，删 key 会让引用处报 `ts(2339)`。`pages.json` 的 `common` 每个 key 都被组件直接引用，删一个就是构建失败——比静默渲染空白好。
 
@@ -222,6 +225,32 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 - 尺寸：viewBox 比值 **2.689**，`h-8`(32px) → 宽 86px。面板高度由左侧（`PERSONAL PROFILE` + `Since` 胶囊）决定，所以换上去**没有撑高面板**（实测 88.3px）。
 - **不是从 `liushen.svg` 改字来的**：原文件是把整串 `LiuShen` 轮廓化成**单条 `<path>`**（d 长 16179），改数字换不了字。做法是用 fontTools 从 **ZCOOLKuaiLe 站酷快乐体**取「克喵:)」轮廓，再按原 logo 特征补：`skewX(-9)` 倾斜 + `stroke-width 3` 圆头加粗（`linecap/linejoin=round`）+ 5% 字距。再生成脚本与候选字体对比见 `.workbuddy/memory/2026-09-25.md`。
 - 页头 / 页脚的「〄 克喵:)」是另一套（`site.json` 的 `logoIcon` + `name`，走 `logo.astro`），**两者互不影响**。
+
+### 6.8 About 页严格照搬 `liushen.fun/about`（`src/pages/about.astro`）
+
+外层是**一整个 `<section class="relative z-20 mx-auto max-w-6xl px-7 py-12 lg:py-16 xl:px-0">`**，里面按顺序 **11 个直接子元素**——顺序不能动，跨站判定表是按 `section.children[i]` 取元素的：
+
+| # | 元素 | 数据来自 |
+| --- | --- | --- |
+| 0 | 页头 `div` → `h2` + `p` | `about.heading.{title,description}` |
+| 1 | AT A GLANCE 大卡（`rounded-[2rem] shadow-xl`） | `about.glance.{eyebrow,title,image,lead,stats[]}` |
+| 2 | 分隔条（无链接） | `about.cards.divider` |
+| 3 | 2×2 卡网格（`grid gap-5 md:grid-cols-2`） | `about.cards.items[]` |
+| 4 | 分隔条 | `about.dream.divider` |
+| 5 | 双栏（`grid gap-6 lg:grid-cols-[1.1fr_0.9fr]`） | `about.dream.{title,paragraphs[],keywords}` |
+| 6 | 分隔条 | `about.journey.divider` |
+| 7 | 时间线·桌面（`relative mx-auto hidden max-w-4xl md:block`） | `experiences` |
+| 8 | 时间线·移动（`relative ml-5 ... md:hidden`） | `experiences` 同一份 |
+| 9 | 分隔条 | `about.contact.divider` |
+| 10 | 联系大卡 + 3 张小卡（`space-y-6`） | `about.contact.{lead,cards[]}` |
+
+**独立页页头没有 eyebrow，这跟首页区块头是两套口径。** 目标站的 about / posts / projects / sites 页头都是 `h2 text-2xl ... sm:text-3xl lg:text-4xl` + `p`（无 eyebrow）；只有首页那些区块头才带 eyebrow（`section-header.astro` 那套）。**目前只把 about 改成了这个口径**，其余三个独立页仍走 `page-heading.astro`；哪天要统一，改 `page-heading.astro` 一处即可。
+
+时间线的两条硬约束：
+- **两套 DOM 共用同一份 `experiences`**，`md:block` / `md:hidden` 只做显示切换，不重复写渲染逻辑。判定表会检查两边条目数相等。
+- 桌面端奇数条 `mr-auto pr-3`（靠左）、偶数条 `ml-auto pl-3`（靠右）；连接线方向随之 `right-full mr-1` / `left-full ml-1`。
+
+图标走 `src/components/icon.astro`：JSON 里只填 `icon: "briefcase"` 这样的 **lucide 名**，组件内部是一张 `Record<string, string>` 的 SVG 片段表（当前 19 个，取自 `lucide-static`，ISC 许可）。**加图标 = 往这张表里补一条**，不要为此引依赖；名字对不上时回落渲染 `initial` 的首字（时间线传的是 `company`）。
 
 ## 7. 主题与样式系统
 
@@ -402,6 +431,13 @@ MissingSharp: Could not find Sharp. Please install Sharp (`sharp`) manually ...
 
 修法（store 里已有的话下载量为 0，实测 31 秒）：`CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm add sharp@0.35.4`。放 `dependencies` 而非 `devDependencies`，只装生产依赖的部署环境同样需要它。
 
+### 9.19 跨站判定表的两个颜色采样陷阱
+
+`verify-about.mjs` 这类「同一份探针同时跑本地与目标站」的判定表，颜色项会稳定产出假失败：
+
+1. **`oklch(0.87 0 0)` 与 `oklch(0.87 0 none)` 是同一个颜色。** chroma = 0 时 hue 无意义，Chrome 序列化时可能给 `none` 也可能给 `0` —— 实测**目标站是 `0`、本地是 `none`**，一次刷出 163 项假失败。判前必须归一化：`v.replace(/\s+none\b/g, " 0")`。注意只对以 `oklch(`/`rgb(` 开头的字符串做（`\s+none` 要求前导空白，本来就不会误伤整体为 `none` 的 `display`/`boxShadow` 值）。
+2. **Tailwind preflight 给所有元素 `border-style: solid` + `border-width: 0`**，所以 `getComputedStyle(el).borderTopColor` 会取到 `currentColor`（暗色下即 body 文字色）—— 本地 body 设了白字、目标站 body 是默认黑，于是「不画边框的元素」比出一堆 `rgb(255,255,255)` vs `rgb(0,0,0)`，看着像严重问题。**判据要用 `parseFloat(borderWidth) === 0` 跳过**，不能写 `borderStyle === "none"`（这个条件永远不成立，一次实测剩 3 项假失败）。
+
 ## 10. 常见改造任务速查
 
 | 想做的事 | 改哪里 |
@@ -415,10 +451,11 @@ MissingSharp: Could not find Sharp. Please install Sharp (`sharp`) manually ...
 | 改首页分隔条胶囊文字 | `collections/pages.json` 的 `home.<区块>.divider.label` |
 | 改任意内页的 `<title>` / meta / 页头 | `collections/pages.json` 的 `<页面>.meta` / `<页面>.heading` |
 | 改全站微文案（`发布于：`/`仅摘要`/空列表提示/`感谢驻足`/`日间`·`夜间`/`Endnote`/`复制订阅地址`/文章页固定句） | `collections/pages.json` 的 `common.*` |
-| 改 About 页文案 | `collections/about.json` |
+| 改 About 页任何文案 | `collections/about.json`（分 `heading` / `glance` / `cards` / `dream` / `journey` / `contact` 六段，见 §6.8） |
+| 换 About 页那张横幅图 | `about.json` → `glance.image`，填 `src/assets/images/` 下的路径（`about.jpg` 或 `about/about.jpg` 都认，glob 是**双层 `**`**）；留空 → 渐变占位 |
+| 加 / 改一段经历 | `collections/experiences.json`（`icon` 填 lucide 名，清单见 `components/icon.astro`） |
 | 加 / 改项目 | `collections/projects.json`（`image` 留空 → 渐变占位） |
 | 加 / 改站点卡 | `collections/sites.json`（`screenshot` 留空 → 渐变占位） |
-| 改工作经历 | `collections/experiences.json`（`logo` 留空 → 首字母占位圆） |
 | 改导航 | `collections/menu.json` |
 | 改社交链接 | `collections/social.json`（按 `group` 分组渲染） |
 | 改备案号 | `collections/site.json` 的 `legal.icp`（设 `null` 即隐藏） |
@@ -446,7 +483,9 @@ cd homepage/homepage/dist && python -m http.server 4399 --bind 127.0.0.1
 
 # 2. 跑探针
 node .workbuddy/tmp/verify-b3.mjs  http://127.0.0.1:4399   # 交互回归 22 项
-node .workbuddy/tmp/verify-b8.mjs                            # 视觉判定表 152 项 + 截图
+node .workbuddy/tmp/verify-b8.mjs                            # 首页视觉判定表 152 项 + 截图
+node .workbuddy/tmp/verify-about.mjs http://127.0.0.1:4399  # About 页跨站判定表 3124 项（同一探针自跑本地 + 目标站）
+node .workbuddy/tmp/shot-about.mjs                           # About 页按锚点截图（时间线 / 联系区 / 移动端）
 node .workbuddy/tmp/verify-outlink.mjs http://127.0.0.1:4399 # 文章卡跳博客（真点击 + hover 截图）8 项
 node .workbuddy/tmp/probe-images.mjs                         # 图片加载 + 相对引用
 node .workbuddy/tmp/shot-view.mjs http://127.0.0.1:4399 <out> # 视口截图；TASKS 第 5 位传选择器可截元素特写
@@ -483,10 +522,11 @@ Chrome 在 `C:/Users/Administrator/.cache/puppeteer/chrome/win64-131.0.6778.204/
 
 ## 14. 视觉复刻的权威依据
 
-- 目标站快照：`E:/CSharp/Temp/lsf.html`（105,764 B）、`E:/CSharp/Temp/lsf-main.css`（97,068 B）
+- 目标站快照：`E:/CSharp/Temp/lsf.html`（首屏 105,764 B）、`E:/CSharp/Temp/lsf-about.html`（About 页 80,107 B）、`E:/CSharp/Temp/lsf-main.css`（97,068 B）
 - 字体分片 CSS 快照：`E:/CSharp/Temp/zq.css`（61,606 B，锁 SHA 版本）
-- 探针与判定表：`E:/kemiao-kmoretti/homepage/.workbuddy/tmp/{verify-b3,verify-b8,probe-images}.mjs`
-- 截图：`.../tmp/b8/`（两站四路由 × 亮暗）、`.../tmp/final/`（本站视口截图）
+- 探针与判定表：`E:/kemiao-kmoretti/homepage/.workbuddy/tmp/{verify-b3,verify-b8,verify-about,verify-outlink,probe-images}.mjs`
+- 截图：`.../tmp/b8/`（两站四路由 × 亮暗）、`.../tmp/about/`（About 页按锚点）、`.../tmp/final/`（本站视口截图）
+- About 页那 11 个直接子元素的目标站原文见 §6.8
 
 **目标站卡片 DOM 结构（逐段抓取的原文）**：
 

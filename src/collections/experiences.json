@@ -1,9 +1,23 @@
 [
 	{
-		"dates": "占位：起始时间 · 结束时间",
-		"role": "占位：你的职位",
+		"dates": "占位：2025.07 · 至今",
+		"role": "占位：你的角色 / 职位",
 		"company": "占位：公司或组织名称",
-		"description": "占位：这段经历具体做了什么。logo 留空会自动渲染首字母占位圆。",
-		"logo": ""
+		"description": "占位：这段经历具体做了什么。icon 填 lucide 图标名（清单见 src/components/icon.astro），留空则用名称首字兜底。",
+		"icon": "briefcase"
+	},
+	{
+		"dates": "占位：2022.09 · 2025.06",
+		"role": "占位：你的角色 / 职位",
+		"company": "占位：学校或组织名称",
+		"description": "占位：第二条经历。桌面端时间线会左右交替排列，条目越多效果越明显。",
+		"icon": "graduation-cap"
+	},
+	{
+		"dates": "占位：2021.09 · 2022.08",
+		"role": "占位：你的角色 / 职位",
+		"company": "占位：社团或团队名称",
+		"description": "占位：第三条经历，例子而已，删掉或者加更多都行。",
+		"icon": "users"
 	}
 ]

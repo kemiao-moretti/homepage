@@ -1,11 +1,115 @@
 {
-	"shortBio": "占位：一段简短的自我介绍，改这里就能换内容。",
-	"photo": "",
-	"experienceTitle": "经历",
-	"connectTitle": "联系我",
-	"connect": "占位：想聊点什么的话，可以通过下面的方式找我。",
-	"links": [
-		{ "text": "GitHub", "url": "https://github.com/kemiao-moretti" },
-		{ "text": "博客", "url": "https://blog.518339.xyz" }
-	]
+	"heading": {
+		"title": "关于我",
+		"description": "占位：一句话说明这个页面放什么，会显示在标题下方。"
+	},
+	"glance": {
+		"eyebrow": "AT A GLANCE",
+		"title": "占位：一句自我概括，比如「一个喜欢技术、生活与表达的人。」",
+		"image": "about/about.jpg",
+		"lead": "占位：两三句自我介绍，会显示在横幅图下面。（横幅图换法：图丢进 src/assets/images/，把 image 改成对应路径，如 \"about.jpg\"/\"about/about.jpg\"；留空则渲染渐变占位）",
+		"stats": [
+			{
+				"label": "一句话介绍",
+				"body": "占位：用一句话概括你自己。"
+			},
+			{
+				"label": "当前状态",
+				"body": "占位：现在在做什么、在哪儿。"
+			},
+			{
+				"label": "长期目标",
+				"body": "占位：想抵达的方向。"
+			}
+		]
+	},
+	"cards": {
+		"divider": "About · 我是怎样的人",
+		"items": [
+			{
+				"title": "简短介绍",
+				"body": "占位：一段自我介绍，说说你是谁、在做什么、喜欢什么。"
+			},
+			{
+				"title": "性格特征",
+				"body": "占位：你的性格特点，比如内向还是外向、更看重什么。"
+			},
+			{
+				"title": "兴趣爱好",
+				"body": "占位：技术之外你还喜欢什么。"
+			},
+			{
+				"title": "自我评价",
+				"body": "占位：你如何看自己，以及希望成为什么样的人。"
+			}
+		]
+	},
+	"dream": {
+		"divider": "Dream · 想去的方向",
+		"title": "占位：你的梦想与目标",
+		"paragraphs": [
+			"占位：第一段写梦想本身，想做成什么、想去哪里。",
+			"占位：第二段写当下的状态和打算怎么走。"
+		],
+		"keywords": {
+			"label": "Keywords",
+			"items": [
+				"好奇心",
+				"长期主义",
+				"审美",
+				"真诚",
+				"表达欲",
+				"记录",
+				"踏实",
+				"团队协作",
+				"分享欲",
+				"生活观察"
+			]
+		}
+	},
+	"journey": {
+		"divider": "Journey · 我的经历"
+	},
+	"contact": {
+		"divider": "Contact · 如何联系我",
+		"lead": {
+			"eyebrow": "Stay In Touch",
+			"title": "保持联系",
+			"body": "占位：说明你欢迎什么样的交流，以及一般在哪出现。",
+			"actions": [
+				{
+					"text": "访问 GitHub",
+					"link": "https://github.com/kemiao-moretti",
+					"variant": "primary",
+					"external": true
+				},
+				{
+					"text": "发送邮件",
+					"link": "mailto:contact@518339.xyz",
+					"variant": "secondary",
+					"external": false
+				}
+			]
+		},
+		"cards": [
+			{
+				"title": "网站留言",
+				"body": "占位：想留下只言片语或者分享近况的话，可以写在这里。",
+				"text": "前往留言",
+				"link": "https://blog.518339.xyz"
+			},
+			{
+				"title": "邮箱联系",
+				"body": "占位：有更长的话想说，邮件会是很好的方式。",
+				"text": "contact@518339.xyz",
+				"link": "mailto:contact@518339.xyz"
+			},
+			{
+				"title": "添加 QQ",
+				"body": "占位：更习惯即时交流的话，也可以在这里找到我。",
+				"text": "占位：你的 QQ 号",
+				"link": ""
+			}
+		]
+	}
 }

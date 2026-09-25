@@ -85,7 +85,6 @@
 		}
 	},
 	"about": {
-		"meta": { "title": "关于" },
-		"heading": { "eyebrow": "About", "title": "关于我" }
+		"meta": { "title": "关于" }
 	}
 }

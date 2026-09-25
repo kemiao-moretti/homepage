@@ -1,0 +1,85 @@
+---
+import TimelineCard from "./about-timeline-card.astro";
+import Icon from "./icon.astro";
+
+interface Experience {
+	dates: string;
+	role: string;
+	company: string;
+	description: string;
+	icon: string;
+}
+
+interface Props {
+	items: Experience[];
+}
+
+const { items } = Astro.props;
+---
+
+<div class="relative mx-auto hidden max-w-4xl md:block">
+  <div
+    class="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 border-l border-dashed border-neutral-300 dark:border-neutral-700"
+  >
+  </div>
+  <div class="space-y-10">
+    {
+      items.map((item, i) => {
+        const left = i % 2 === 0;
+        return (
+          <div class="relative">
+            <div class={left ? "w-[calc(50%-2rem)] mr-auto pr-3" : "w-[calc(50%-2rem)] ml-auto pl-3"}>
+              <TimelineCard
+                dates={item.dates}
+                role={item.role}
+                company={item.company}
+                description={item.description}
+              />
+            </div>
+            <div class="absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2">
+              <div
+                class:list={[
+                  "absolute top-1/2 h-px w-6 -translate-y-1/2 bg-neutral-300 dark:bg-neutral-700",
+                  left ? "right-full mr-1" : "left-full ml-1",
+                ]}
+              />
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+                <Icon
+                  name={item.icon}
+                  initial={item.company}
+                  class="h-5 w-5 text-neutral-700 dark:text-neutral-300"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      })
+    }
+  </div>
+</div>
+
+<div
+  class="relative ml-5 border-l border-dashed border-neutral-300 pl-7 dark:border-neutral-700 md:hidden"
+>
+  <div class="space-y-8">
+    {
+      items.map((item) => (
+        <div class="relative pl-14 md:pl-16">
+          <div class="absolute left-0 top-0 z-20 flex h-11 w-11 items-center justify-center rounded-2xl border border-dashed border-neutral-300 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:h-12 md:w-12">
+            <Icon
+              name={item.icon}
+              initial={item.company}
+              class="h-5 w-5 text-neutral-700 dark:text-neutral-300 md:h-6 md:w-6"
+            />
+          </div>
+          <TimelineCard
+            dates={item.dates}
+            role={item.role}
+            company={item.company}
+            description={item.description}
+          />
+        </div>
+      ))
+    }
+  </div>
+</div>
