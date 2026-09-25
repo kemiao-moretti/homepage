@@ -1,22 +1,22 @@
 ---
+import pages from "../../collections/pages.json";
 import site from "../../collections/site.json";
 import Button from "../button.astro";
 import HelperCard from "../helper-card.astro";
 import PostsLoop from "../posts-loop.astro";
 import SectionHeader from "../section-header.astro";
 import SubscribeCard from "../subscribe-card.astro";
+
+const copy = pages.home.writings;
 ---
 
 <section class="mx-auto max-w-6xl px-7 lg:px-0">
   <SectionHeader
-    eyebrow="Latest Notes"
-    title="✍🏻 我的文章"
-    description="除了敲代码，也会写一些关于生活、技术和日常思考的文字。"
+    eyebrow={copy.eyebrow}
+    title={copy.title}
+    description={copy.description}
   >
-    <HelperCard
-      title="有更新就记录"
-      body="写下来，是为了沉淀，也为了以后回头看时还能找到当时的自己。"
-    />
+    <HelperCard title={copy.helper.title} body={copy.helper.body} />
   </SectionHeader>
 
   <div class="mx-auto mt-10 w-full max-w-6xl xl:px-0">
@@ -24,7 +24,7 @@ import SubscribeCard from "../subscribe-card.astro";
       <div class="space-y-7">
         <PostsLoop count="3" />
         <div class="flex w-full items-center justify-center pt-3 pb-3">
-          <Button link="/posts" text="查看所有文章" />
+          <Button link={copy.cta.link} text={copy.cta.text} />
         </div>
       </div>
       <div>

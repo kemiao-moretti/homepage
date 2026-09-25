@@ -54,7 +54,7 @@ pnpm preview     # 预览 dist/
 
 - `astro check` → **39 files / 0 errors / 0 warnings / 0 hints**
 - `pnpm build` → **7 个页面** + `sitemap-index.xml` + `sitemap-0.xml`，退出码 0
-- `biome check .` → 51 files，`No fixes applied`
+- `biome check .` → 52 files，`No fixes applied`
 - CDP 视觉判定表（对比 liushen.fun）→ `verify-b8.mjs` **152/152**
 - CDP 交互回归 → `verify-b3.mjs` **22/22**
 
@@ -69,13 +69,14 @@ src/
 │  ├─ images/                 # 走 astro:assets 的图片（会自动转 WebP 出 srcset + 带宽高）
 │  └─ js/main.js              # 全部交互：深色模式、吸顶头部、移动端菜单、导航高亮、复制订阅地址
 ├─ collections/               # 【注意】纯 JSON 数据，不是 Astro Collections
-│  ├─ site.json               # ⭐ 站点总配置：name/title/description/hero/profile/subscribe/legal/font
+│  ├─ site.json               # ⭐ 站点身份 + 首屏：name/title/description/hero/profile/subscribe/legal/font
+│  ├─ pages.json              # ⭐ 页面与区块文案：common（全站微文案）/ home（三区块）/ posts·projects·sites·about（各页 meta+heading）
 │  ├─ menu.json               # 导航项 [{name, url}]
 │  ├─ social.json             # 页脚社交链接，按 group 分组
 │  ├─ projects.json           # 项目卡片（现为占位骨架）
 │  ├─ sites.json              # 友站 / 其他站点卡片
 │  ├─ experiences.json        # 工作经历（现为占位骨架）
-│  └─ about.json              # About 页文案 + 链接
+│  └─ about.json              # About 页正文文案 + 链接
 ├─ content.config.ts          # 唯一的 collection 定义（blogPostsLoader）——在 src/ 根，不在 src/content/ 里
 ├─ loaders/blog-posts.ts      # ⭐ 远程文章管道：RSS → 仓库文件树 → 正文抓取 → 绝对化
 ├─ layouts/
@@ -155,12 +156,12 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 
 ### 6.1 站点信息全部在 `src/collections/site.json`
 
-`name` / `logoIcon` / `title` / `description` / `hero{badge,title,subtitle,intro,skills[],cta[]}` / `profile{avatar,since}` / `subscribe{feedUrl,title,description}` / `legal{icp,police,credit}` / `font{name,author,license,url}` / `copyright`。
+`name` / `logoIcon` / `title` / `description` / `hero{badge,title,subtitle,intro,skills[],cta[]}` / `profile{avatar,since,panelLabel,sinceLabel}` / `subscribe{feedUrl,title,description}` / `legal{icp,police,credit}` / `font{label,name,author,license,url}` / `copyright`。所有可见文字都在这里，`.astro` 只做排版（见 §6.6）。
 
-- `profile.avatar` 填的是**`src/assets/images/` 下的文件名**（如 `avatar-mcy.png`），不是 URL。`hero.astro` 用 `import.meta.glob` 把该目录映射成 `{ 文件名 → ImageMetadata }`，交给 `<Image>` 输出 WebP + srcset + `width/height`（防 CLS）。
+- `profile.avatar` 填的是**`src/assets/images/` 下的文件名**（如 `avatar.webp`），不是 URL、也不是 `/assets/images/...` 路径。`hero.astro` 用 `import.meta.glob` 把该目录映射成 `{ 文件名 → ImageMetadata }`，交给 `<Image>` 输出 WebP + srcset + `width/height`（防 CLS）。
   - 换头像：把图片丢进 `src/assets/images/`，把文件名填进 `profile.avatar`，**不用动代码**。
   - 留空或文件名对不上 → `avatar` 为 `undefined` → 自动降级成 `PlaceholderMedia` 渐变圆（首字）。
-  - 别把图片放 `public/`：那会原样进 `dist`、绕过优化（实测 1058×1486 的 PNG 是 1.2 MB，转 720w WebP 后只有 65 KB）。
+  - 别把图片放 `public/`：那会原样进 `dist`、绕过优化。放 `src/assets/images/` 后，实测一张 103 kB 的源图在 `widths={[360,540,720]}` 下产出 19 / 37 / 57 / 102 kB 四档，首屏按 `sizes` 只会取其中一档。
 - `legal.icp` / `legal.police` 为 `null` 时**整个链接不渲染**（footer 里做了条件判断）。
 - `post.astro` 的 meta description 取 `frontmatter.description || aiSummary || title`。
 
@@ -189,6 +190,27 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 `site` 已在 `astro.config.mjs` 配成 `https://home.518339.xyz`，canonical / og / sitemap / robots 全依赖它。输出 `<title>`、`description`、`rel=canonical`、`generator`、`og:type|site_name|locale|title|description|url|image`、`twitter:card|title|description`、`rel=alternate`（RSS）。**换域名时记得同步改 `public/robots.txt` 的 Sitemap 行。**
 
 `<title>` 规则：首页 = `site.title`；子页 = `` `${title} · ${site.name}` ``。
+
+### 6.6 页面与区块文案全部外置在 `src/collections/pages.json`
+
+`.astro` 里**不留任何用户可见文案**（例外只有 Feedly / Inoreader / RSS 这类品牌名和 `# tag` 前缀）。想改字，只用碰 `src/collections/`：
+
+| 想改的东西 | 改哪里 |
+| --- | --- |
+| 站点名 / Logo 图标 / SEO / 首屏（徽章·标题·副标题·正文·标签·CTA） | `site.json` |
+| 首屏头像面板的 `Personal Profile` / `Since`、页脚字体行前缀 | `site.json` → `profile.panelLabel` / `profile.sinceLabel` / `font.label` |
+| 首页三区块（标题·描述·辅助卡·按钮） | `pages.json` → `home.{projects,sites,writings}` |
+| 首页区块间分隔条胶囊 | `pages.json` → `home.<区块>.divider.{label,href}` |
+| 内页 `<title>` / meta description / 页头 | `pages.json` → `<页面>.meta` / `<页面>.heading` |
+| 全站微文案（`发布于：`、`仅摘要`、空列表提示、`感谢驻足`、`日间`/`夜间`、`Endnote`、`复制订阅地址`、文章页固定句） | `pages.json` → `common` |
+| About 页正文 | `about.json` |
+| 项目 / 站点 / 经历 / 社交 / 导航 | 各自的 `projects.json` / `sites.json` / `experiences.json` / `social.json` / `menu.json` |
+
+**只改值，不要删 key。** 理由同 §6.4：Astro 从 JSON 推断的是**逐字段字面类型**，删 key 会让引用处报 `ts(2339)`。`pages.json` 的 `common` 每个 key 都被组件直接引用，删一个就是构建失败——比静默渲染空白好。
+
+结构上的两个小约定：
+- `divider` 塞在区块对象里（而不是单独一个数组），是为了**顺序不必两处维护**：`index.astro` 把 `projects → sites → writings` 的块序写死，只从 JSON 取文字。
+- `home.sites.helper.width` 是 `pages.json` 里唯一的非文案字段（辅助卡宽度 token）。它和那条辅助卡一一对应，改文案时顺手能看见，就没有再拆文件。
 
 ## 7. 主题与样式系统
 
@@ -375,7 +397,12 @@ MissingSharp: Could not find Sharp. Please install Sharp (`sharp`) manually ...
 | --- | --- |
 | 改站点名 / Logo 图标 | `collections/site.json` 的 `name` / `logoIcon` |
 | 改首屏文案 / 标签 / 按钮 | `collections/site.json` 的 `hero.*` |
-| 换首屏头像 | `collections/site.json` 的 `profile.avatar`（填 URL 或 `/assets/images/xxx.png`）；留空则渲染渐变占位圆 |
+| 改首屏头像面板标签 | `collections/site.json` 的 `profile.panelLabel` / `profile.sinceLabel` |
+| 换首屏头像 | `collections/site.json` 的 `profile.avatar`（填 `src/assets/images/` 下的文件名）；留空或对不上则渲染渐变占位圆 |
+| 改首页三区块标题 / 描述 / 辅助卡 / 按钮 | `collections/pages.json` 的 `home.{projects,sites,writings}.*` |
+| 改首页分隔条胶囊文字 | `collections/pages.json` 的 `home.<区块>.divider.label` |
+| 改任意内页的 `<title>` / meta / 页头 | `collections/pages.json` 的 `<页面>.meta` / `<页面>.heading` |
+| 改全站微文案（`发布于：`/`仅摘要`/空列表提示/`感谢驻足`/`日间`·`夜间`/`Endnote`/`复制订阅地址`/文章页固定句） | `collections/pages.json` 的 `common.*` |
 | 改 About 页文案 | `collections/about.json` |
 | 加 / 改项目 | `collections/projects.json`（`image` 留空 → 渐变占位） |
 | 加 / 改站点卡 | `collections/sites.json`（`screenshot` 留空 → 渐变占位） |

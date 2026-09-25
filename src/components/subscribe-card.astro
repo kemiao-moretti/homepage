@@ -1,4 +1,6 @@
 ---
+import pages from "../collections/pages.json";
+
 const { feedUrl, title, description } = Astro.props;
 
 const feedly = `https://feedly.com/i/subscription/feed%2F${encodeURIComponent(feedUrl)}`;
@@ -23,7 +25,7 @@ const inoreader = `https://www.inoreader.com/feed/${encodeURIComponent(feedUrl)}
       id="feedUrl"
       type="url"
       readonly
-      aria-label="RSS 订阅地址"
+      aria-label={pages.common.feedUrlLabel}
       value={feedUrl}
       class="h-10 w-full rounded-md border border-dashed border-neutral-300 bg-white/70 px-3 text-xs text-neutral-600 focus:outline-hidden dark:border-neutral-700 dark:bg-neutral-950/60 dark:text-neutral-300"
     />
@@ -32,7 +34,7 @@ const inoreader = `https://www.inoreader.com/feed/${encodeURIComponent(feedUrl)}
       type="button"
       class="w-full rounded-full border border-neutral-900 bg-neutral-900 px-4 py-2 text-xs font-semibold text-neutral-100 duration-300 ease-out hover:bg-white hover:text-neutral-900 dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-950 dark:hover:text-white"
     >
-      复制订阅地址
+      {pages.common.copyFeedUrl}
     </button>
     <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
       <a

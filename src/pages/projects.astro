@@ -1,4 +1,5 @@
 ---
+import pages from "../collections/pages.json";
 import projects from "../collections/projects.json";
 import PageHeading from "../components/page-heading.astro";
 import Project from "../components/project.astro";
@@ -6,14 +7,14 @@ import Layout from "../layouts/main.astro";
 ---
 
 <Layout
-  title="项目"
-  description="克喵做过和正在做的项目清单。"
+  title={pages.projects.meta.title}
+  description={pages.projects.meta.description}
 >
   <section class="relative z-20 mx-auto mt-12 max-w-6xl px-7 lg:px-0">
     <PageHeading
-      eyebrow="All Builds"
-      title="项目"
-      description="随手做的工具、尝试过的体验，以及单纯因为好玩而写出来的东西。"
+      eyebrow={pages.projects.heading.eyebrow}
+      title={pages.projects.heading.title}
+      description={pages.projects.heading.description}
     />
 
     <div class="my-10 grid w-full items-stretch gap-7 md:grid-cols-2">

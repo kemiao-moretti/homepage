@@ -1,5 +1,6 @@
 ---
 import "../assets/css/main.css";
+import pages from "../collections/pages.json";
 import site from "../collections/site.json";
 import Atmosphere from "../components/atmosphere.astro";
 import Endnote from "../components/endnote.astro";
@@ -83,7 +84,7 @@ const ogImage = image ? new URL(image, Astro.site).href : "";
     <TileGrid />
     <Header />
     <slot />
-    <Endnote>
+    <Endnote label={pages.common.endnote}>
       <Footer />
     </Endnote>
     <script>import "../assets/js/main.js";</script>

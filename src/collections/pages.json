@@ -1,0 +1,91 @@
+{
+	"common": {
+		"emptyPosts": "暂时没有拉取到文章。若刚发布新文章，稍等片刻再试。",
+		"publishedAt": "发布于：",
+		"summaryOnly": "仅摘要",
+		"footerBadge": "感谢驻足",
+		"endnote": "Endnote",
+		"themeDay": "日间",
+		"themeNight": "夜间",
+		"feedUrlLabel": "RSS 订阅地址",
+		"copyFeedUrl": "复制订阅地址",
+		"aiSummary": "AI 摘要",
+		"truncatedNotice": "正文从博客抓取失败，这里只显示了摘要。",
+		"truncatedLink": "前往原文阅读完整内容",
+		"viewSource": "查看原文 →",
+		"backToPosts": "← 返回文章列表"
+	},
+	"home": {
+		"projects": {
+			"divider": { "label": "Projects · 我最近在做什么", "href": "/projects" },
+			"eyebrow": "Selected Builds",
+			"title": "😃 我的项目",
+			"description": "最近在折腾的一些项目，工具、体验都有，也有单纯因为好玩就做出来的。",
+			"helper": {
+				"title": "持续更新中",
+				"body": "新的想法会慢慢长出来，旧的作品也会不断打磨。"
+			},
+			"cta": { "text": "查看所有项目", "link": "/projects" }
+		},
+		"sites": {
+			"divider": { "label": "Sites · 我的在线作品", "href": "/sites" },
+			"eyebrow": "Online Presence",
+			"title": "😗 我的站点",
+			"description": "已经部署上线的在线作品，覆盖不同的小需求，也留了一些值得长期维护的内容。",
+			"helper": {
+				"title": "站点常驻在线",
+				"body": "这里放的是我最常用、也最能代表日常折腾方向的一组在线作品。",
+				"width": "md:max-w-[18rem]"
+			},
+			"cta": { "text": "查看所有网站", "link": "/sites" }
+		},
+		"writings": {
+			"divider": { "label": "Writings · 我写下来的东西", "href": "/posts" },
+			"eyebrow": "Latest Notes",
+			"title": "✍🏻 我的文章",
+			"description": "除了敲代码，也会写一些关于生活、技术和日常思考的文字。",
+			"helper": {
+				"title": "有更新就记录",
+				"body": "写下来，是为了沉淀，也为了以后回头看时还能找到当时的自己。"
+			},
+			"cta": { "text": "查看所有文章", "link": "/posts" }
+		}
+	},
+	"posts": {
+		"meta": {
+			"title": "文章",
+			"description": "克喵的全部文章，内容同步自 blog.518339.xyz，点开会跳转到博客阅读全文。"
+		},
+		"heading": {
+			"eyebrow": "All Posts",
+			"title": "文章",
+			"description": "列表来自我的博客，点开任意一篇都会跳转到博客原文；想追更新可以直接用 RSS 订阅。"
+		}
+	},
+	"projects": {
+		"meta": {
+			"title": "项目",
+			"description": "克喵做过和正在做的项目清单。"
+		},
+		"heading": {
+			"eyebrow": "All Builds",
+			"title": "项目",
+			"description": "随手做的工具、尝试过的体验，以及单纯因为好玩而写出来的东西。"
+		}
+	},
+	"sites": {
+		"meta": {
+			"title": "站点",
+			"description": "克喵在别处维护的站点汇总。"
+		},
+		"heading": {
+			"eyebrow": "All Sites",
+			"title": "我的站点",
+			"description": "已经部署上线的在线作品，覆盖不同的小需求，也留了一些值得长期维护的内容。"
+		}
+	},
+	"about": {
+		"meta": { "title": "关于" },
+		"heading": { "eyebrow": "About", "title": "关于我" }
+	}
+}

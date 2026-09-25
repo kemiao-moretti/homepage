@@ -1,5 +1,6 @@
 ---
 import menus from "../collections/menu.json";
+import pages from "../collections/pages.json";
 import Logo from "../components/logo.astro";
 
 const normalize = (p: string) => (p.length > 1 ? p.replace(/\/$/, "") : "/");
@@ -125,8 +126,10 @@ const isActive = (url: string) => normalize(url) === current;
             >
           </div>
           <span class="hidden sm:inline-block">
-            <span id="dayText" class="ml-2">日间</span>
-            <span id="nightText" class="ml-2 hidden">夜间</span>
+            <span id="dayText" class="ml-2">{pages.common.themeDay}</span>
+            <span id="nightText" class="ml-2 hidden"
+              >{pages.common.themeNight}</span
+            >
           </span>
         </div>
       </nav>

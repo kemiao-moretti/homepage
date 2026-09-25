@@ -1,18 +1,21 @@
 ---
+import pages from "../../collections/pages.json";
 import projects from "../../collections/projects.json";
 import Button from "../button.astro";
 import HelperCard from "../helper-card.astro";
 import Project from "../project.astro";
 import SectionHeader from "../section-header.astro";
+
+const copy = pages.home.projects;
 ---
 
 <section class="mx-auto max-w-6xl px-7 lg:px-0">
   <SectionHeader
-    eyebrow="Selected Builds"
-    title="😃 我的项目"
-    description="最近在折腾的一些项目，工具、体验都有，也有单纯因为好玩就做出来的。"
+    eyebrow={copy.eyebrow}
+    title={copy.title}
+    description={copy.description}
   >
-    <HelperCard title="持续更新中" body="新的想法会慢慢长出来，旧的作品也会不断打磨。" />
+    <HelperCard title={copy.helper.title} body={copy.helper.body} />
   </SectionHeader>
 
   <div class="mt-10 grid w-full items-stretch gap-7 md:grid-cols-2">
@@ -29,6 +32,6 @@ import SectionHeader from "../section-header.astro";
   </div>
 
   <div class="flex w-full items-center justify-center pt-8 pb-3">
-    <Button link="/projects" text="查看所有项目" />
+    <Button link={copy.cta.link} text={copy.cta.text} />
   </div>
 </section>

@@ -1,19 +1,17 @@
 ---
+import pages from "../collections/pages.json";
 import sites from "../collections/sites.json";
 import PageHeading from "../components/page-heading.astro";
 import SiteCard from "../components/site-card.astro";
 import Layout from "../layouts/main.astro";
 ---
 
-<Layout
-  title="站点"
-  description="克喵在别处维护的站点汇总。"
->
+<Layout title={pages.sites.meta.title} description={pages.sites.meta.description}>
   <section class="relative z-20 mx-auto mt-12 max-w-6xl px-7 lg:px-0">
     <PageHeading
-      eyebrow="All Sites"
-      title="我的站点"
-      description="已经部署上线的在线作品，覆盖不同的小需求，也留了一些值得长期维护的内容。"
+      eyebrow={pages.sites.heading.eyebrow}
+      title={pages.sites.heading.title}
+      description={pages.sites.heading.description}
     />
 
     <div class="my-10 grid w-full gap-5 sm:grid-cols-2 xl:grid-cols-3">

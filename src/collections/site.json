@@ -1,11 +1,11 @@
 {
-	"name": "克喵",
+	"name": "克喵:)",
 	"logoIcon": "〄",
 	"title": "克喵 · 个人主页",
 	"description": "克喵的个人主页 —— 文章、项目，以及在别处的站点。",
 	"hero": {
 		"badge": "PERSONAL SPACE",
-		"title": "我是克喵，",
+		"title": "我是克喵:)，",
 		"subtitle": "把折腾过的东西写下来，慢慢攒成一间自己的房间。",
 		"intro": "这里放我的文章、项目和散落在别处的站点。文章正文直接从博客同步过来，所以这边看到的永远是最新那一份。",
 		"skills": ["技术文章", "分享生活", "日常点滴"],
@@ -15,8 +15,10 @@
 		]
 	},
 	"profile": {
-		"avatar": "avatar-mcy.png",
-		"since": "2024"
+		"avatar": "avatar.webp",
+		"since": "2024",
+		"panelLabel": "Personal Profile",
+		"sinceLabel": "Since"
 	},
 	"subscribe": {
 		"feedUrl": "https://blog.518339.xyz/posts/index.xml",
@@ -32,6 +34,7 @@
 		}
 	},
 	"font": {
+		"label": "字体",
 		"name": "朱雀仿宋",
 		"author": "TrionesType",
 		"license": "OFL-1.1",

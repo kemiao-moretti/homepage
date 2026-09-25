@@ -1,4 +1,5 @@
 ---
+import pages from "../collections/pages.json";
 import site from "../collections/site.json";
 import Hero from "../components/hero.astro";
 import Projects from "../components/home/projects.astro";
@@ -11,12 +12,21 @@ import Layout from "../layouts/main.astro";
 <Layout title={site.title}>
   <Hero hero={site.hero} profile={site.profile} />
 
-  <SectionDivider label="Projects · 我最近在做什么" href="/projects" />
+  <SectionDivider
+    label={pages.home.projects.divider.label}
+    href={pages.home.projects.divider.href}
+  />
   <Projects />
 
-  <SectionDivider label="Sites · 我的在线作品" href="/sites" />
+  <SectionDivider
+    label={pages.home.sites.divider.label}
+    href={pages.home.sites.divider.href}
+  />
   <Sites />
 
-  <SectionDivider label="Writings · 我写下来的东西" href="/posts" />
+  <SectionDivider
+    label={pages.home.writings.divider.label}
+    href={pages.home.writings.divider.href}
+  />
   <Writings />
 </Layout>

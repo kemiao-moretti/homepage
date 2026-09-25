@@ -1,21 +1,24 @@
 ---
+import pages from "../../collections/pages.json";
 import sites from "../../collections/sites.json";
 import Button from "../button.astro";
 import HelperCard from "../helper-card.astro";
 import SectionHeader from "../section-header.astro";
 import SiteCard from "../site-card.astro";
+
+const copy = pages.home.sites;
 ---
 
 <section class="mx-auto max-w-6xl px-7 lg:px-0">
   <SectionHeader
-    eyebrow="Online Presence"
-    title="😗 我的站点"
-    description="已经部署上线的在线作品，覆盖不同的小需求，也留了一些值得长期维护的内容。"
+    eyebrow={copy.eyebrow}
+    title={copy.title}
+    description={copy.description}
   >
     <HelperCard
-      width="md:max-w-[18rem]"
-      title="站点常驻在线"
-      body="这里放的是我最常用、也最能代表日常折腾方向的一组在线作品。"
+      width={copy.helper.width}
+      title={copy.helper.title}
+      body={copy.helper.body}
     />
   </SectionHeader>
 
@@ -33,6 +36,6 @@ import SiteCard from "../site-card.astro";
   </div>
 
   <div class="flex w-full items-center justify-center pt-8 pb-3">
-    <Button link="/sites" text="查看所有网站" />
+    <Button link={copy.cta.link} text={copy.cta.text} />
   </div>
 </section>

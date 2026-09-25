@@ -1,5 +1,6 @@
 ---
 import { getCollection } from "astro:content";
+import pages from "../collections/pages.json";
 import ArticleCard from "./article-card.astro";
 
 const { count = "all" } = Astro.props;
@@ -28,7 +29,7 @@ const list = count === "all" ? posts : posts.slice(0, Number(count));
   {
     list.length === 0 && (
       <p class="rounded-card border border-dashed border-neutral-300 p-7 text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-        暂时没有拉取到文章。若刚发布新文章，稍等片刻再试。
+        {pages.common.emptyPosts}
       </p>
     )
   }

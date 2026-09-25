@@ -1,18 +1,19 @@
 ---
+import pages from "../collections/pages.json";
 import PageHeading from "../components/page-heading.astro";
 import PostsLoop from "../components/posts-loop.astro";
 import Layout from "../layouts/main.astro";
 ---
 
 <Layout
-  title="文章"
-  description="克喵的全部文章，内容同步自 blog.518339.xyz，点开会跳转到博客阅读全文。"
+  title={pages.posts.meta.title}
+  description={pages.posts.meta.description}
 >
   <section class="relative z-20 mx-auto mt-12 max-w-6xl px-7 lg:px-0">
     <PageHeading
-      eyebrow="All Posts"
-      title="文章"
-      description="列表来自我的博客，点开任意一篇都会跳转到博客原文；想追更新可以直接用 RSS 订阅。"
+      eyebrow={pages.posts.heading.eyebrow}
+      title={pages.posts.heading.title}
+      description={pages.posts.heading.description}
     />
 
     <div class="my-10">
