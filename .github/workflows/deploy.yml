@@ -108,12 +108,23 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
           DEPLOYMENT_ID: ${{ steps.deploy.outputs.pages-deployment-id }}
         run: |
+          # <name>.pages.dev 是全局唯一的：项目名可以就叫 kemiao-homepage，但子域要是
+          # 被别人占了，Cloudflare 会另分配一个（如 kemiao-homepage-bi8.pages.dev），
+          # 并出现在 wrangler 输出的地址里。不点破很容易以为部署压根没生效。
+          if [ -n "$DEPLOYMENT_URL" ]; then
+            case "$DEPLOYMENT_URL" in
+              *"${PROJECT_NAME}.pages.dev"*) ;;
+              *)
+                echo "::warning title=pages.dev 子域与项目名不一致::项目名是 ${PROJECT_NAME}，实际地址是 ${DEPLOYMENT_URL} —— ${PROJECT_NAME}.pages.dev 已被占用，Cloudflare 另分配了子域。以这个实际地址为准，绑自定义域名不受影响。"
+                ;;
+            esac
+          fi
           {
             echo "### 已部署到 Cloudflare Pages"
             echo
             echo "| | |"
             echo "| --- | --- |"
-            echo "| 地址 | ${DEPLOYMENT_URL:-https://${PROJECT_NAME}.pages.dev} |"
+            echo "| 地址 | ${DEPLOYMENT_URL:-未取到} |"
             echo "| 部署 ID | ${DEPLOYMENT_ID:-未取到} |"
             echo "| 提交 | \`${{ github.sha }}\` |"
           } >> "$GITHUB_STEP_SUMMARY"
