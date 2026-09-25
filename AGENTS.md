@@ -30,7 +30,7 @@ Blog 源仓库（用于取 frontmatter）：`kemiao-moretti/meowloge` @ `main`�
 | Node | `>= 22.12.0` | Astro 7 硬性要求；实测 `22.22.2` 正常 |
 | Lint / 格式化 | Biome `2.5.14` | ⚠️ `pnpm check` 会带 `--write --unsafe` **直接改文件** |
 | 类型 | TypeScript `5.9.3` | **不要升到 7.x**：`@astrojs/check@0.9.10` 的 peer 只声明 `^5.0.0 \|\| ^6.0.0` |
-| 运行时依赖 | `fast-xml-parser`（解析 RSS）、`yaml`（解析 frontmatter） | 只有这两个 |
+| 运行时依赖 | `fast-xml-parser`（解析 RSS）、`yaml`（解析 frontmatter）、`sharp`（astro:assets 出图） | 缺 `sharp` 会让构建 exit 1，见 §9.18 |
 | SEO | `@astrojs/sitemap` | 见 §6.4 |
 | CI / 部署 | **无** | 没有 `.github/`、没有 `.env` 示例 |
 
@@ -66,6 +66,7 @@ pnpm preview     # 预览 dist/
 src/
 ├─ assets/
 │  ├─ css/main.css            # 唯一的全局 CSS：Tailwind v4 入口 + @theme token + 自定义类
+│  ├─ images/                 # 走 astro:assets 的图片（会自动转 WebP 出 srcset + 带宽高）
 │  └─ js/main.js              # 全部交互：深色模式、吸顶头部、移动端菜单、导航高亮、复制订阅地址
 ├─ collections/               # 【注意】纯 JSON 数据，不是 Astro Collections
 │  ├─ site.json               # ⭐ 站点总配置：name/title/description/hero/profile/subscribe/legal/font
@@ -156,7 +157,10 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 
 `name` / `logoIcon` / `title` / `description` / `hero{badge,title,subtitle,intro,skills[],cta[]}` / `profile{avatar,since}` / `subscribe{feedUrl,title,description}` / `legal{icp,police,credit}` / `font{name,author,license,url}` / `copyright`。
 
-- `profile.avatar` 为 `""` 时 `hero.astro` 渲染 `PlaceholderMedia` 渐变圆；填了路径就渲染 `<img>`。
+- `profile.avatar` 填的是**`src/assets/images/` 下的文件名**（如 `avatar-mcy.png`），不是 URL。`hero.astro` 用 `import.meta.glob` 把该目录映射成 `{ 文件名 → ImageMetadata }`，交给 `<Image>` 输出 WebP + srcset + `width/height`（防 CLS）。
+  - 换头像：把图片丢进 `src/assets/images/`，把文件名填进 `profile.avatar`，**不用动代码**。
+  - 留空或文件名对不上 → `avatar` 为 `undefined` → 自动降级成 `PlaceholderMedia` 渐变圆（首字）。
+  - 别把图片放 `public/`：那会原样进 `dist`、绕过优化（实测 1058×1486 的 PNG 是 1.2 MB，转 720w WebP 后只有 65 KB）。
 - `legal.icp` / `legal.police` 为 `null` 时**整个链接不渲染**（footer 里做了条件判断）。
 - `post.astro` 的 meta description 取 `frontmatter.description || aiSummary || title`。
 
@@ -349,6 +353,21 @@ taskkill //F //PID <pid> //T     # //T 连带子进程
 
 目标站是 `div.mx-auto.mt-10.w-full.max-w-6xl > div.grid.items-start.gap-7.lg:grid-cols-[minmax(0,1fr)_320px]`。
 把 `mt-10` 并到 `div.grid` 上会得到 40px vs 0px 的偏差（CDP 判定表会直接抓到）。
+
+### 9.18 `astro:assets` 需要**根级** `sharp`，否则构建 exit 1
+
+Astro 7 把 `sharp` 当**可选** peer。`node_modules/.pnpm` 里可能早就有 `sharp@0.35.4` + `@img/sharp-win32-x64`（被 astro 解析出来的），但**根 `node_modules/sharp` 不存在**时 `loadSharp()` 照样抛：
+
+```
+generating optimized images
+[WARN] [build] Unable to generate optimized image for /_astro/avatar-mcy.xxxx.png:
+MissingSharp: Could not find Sharp. Please install Sharp (`sharp`) manually ...
+ ELIFECYCLE  Command failed with exit code 1.
+```
+
+**迷惑点**：此时 **7 个页面已经全部生成完毕**（`✓ Completed in 353ms` 打在报错之前），失败只在最后的图片优化一步 —— 只看 grep `page(s) built` 会以为成功了，必须看日志尾部 / 退出码。
+
+修法（store 里已有的话下载量为 0，实测 31 秒）：`CODEBUDDY_SAFE_DELETE_ENABLED=0 pnpm add sharp@0.35.4`。放 `dependencies` 而非 `devDependencies`，只装生产依赖的部署环境同样需要它。
 
 ## 10. 常见改造任务速查
 

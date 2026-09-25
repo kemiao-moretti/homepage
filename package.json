@@ -28,6 +28,7 @@
 	},
 	"dependencies": {
 		"fast-xml-parser": "^5.11.1",
+		"sharp": "0.35.4",
 		"yaml": "^2.9.1"
 	}
 }
