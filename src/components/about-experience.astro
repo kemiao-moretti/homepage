@@ -1,17 +1,23 @@
 ---
+import PlaceholderMedia from "./placeholder-media.astro";
+
 const { logo, dates, role, company, description } = Astro.props;
 ---
 
 <div class="relative flex flex-col justify-start pl-12">
   <div
-    class="absolute top-0 left-0 z-40 flex items-center justify-center -translate-x-1/2 bg-white border rounded-full dark:bg-neutral-950 w-14 h-14 border-neutral-300 dark:border-neutral-700"
+    class="absolute left-0 top-0 z-40 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full border border-dashed border-neutral-300 bg-white dark:border-neutral-700 dark:bg-neutral-950"
   >
-    <img src={logo} alt={company} class="w-8 h-8" />
+    {
+      logo ? (
+        <img src={logo} alt={company} class="h-8 w-8" />
+      ) : (
+        <PlaceholderMedia initial={company} class="h-8 w-8 rounded-full text-xs" />
+      )
+    }
   </div>
 
-  <p
-    class="text-xs uppercase text-neutral-400 dark:text-neutral-500 trackign-widest"
-  >
+  <p class="text-xs uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
     {dates}
   </p>
   <h3 class="my-1 text-lg font-bold dark:text-neutral-100">{role}</h3>

@@ -1,10 +1,22 @@
 ---
-const { link, text } = Astro.props;
+const { link, text, variant = "primary", external = false } = Astro.props;
+
+const base =
+	"inline-flex w-auto shrink-0 items-center justify-center whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold duration-300 ease-out";
+
+const variants = {
+	primary:
+		"border-neutral-900 bg-neutral-900 text-neutral-100 hover:border-neutral-700 hover:bg-white hover:text-neutral-900 dark:border-white dark:bg-white dark:text-neutral-900 dark:hover:border-neutral-300 dark:hover:bg-black dark:hover:text-white",
+	secondary:
+		"border-neutral-300 bg-white text-neutral-900 hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-black dark:text-white dark:hover:border-neutral-600 dark:hover:bg-neutral-950",
+};
 ---
 
 <a
   href={link}
-  class="inline-flex w-auto px-4 py-2 mt-5 text-xs font-semibold duration-300 ease-out border rounded-full bg-neutral-900 dark:bg-white dark:text-neutral-900 text-neutral-100 hover:border-neutral-700 border-neutral-900 dark:hover:border-neutral-300 hover:bg-white dark:hover:bg-black dark:hover:text-white hover:text-neutral-900"
+  target={external ? "_blank" : "_self"}
+  rel={external && "noopener noreferrer"}
+  class:list={[base, variants[variant] ?? variants.primary]}
 >
   {text}
 </a>

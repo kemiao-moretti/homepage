@@ -1,0 +1,87 @@
+---
+import ArrowIcon from "./arrow-icon.astro";
+
+const {
+	href,
+	title,
+	description,
+	dateFormatted,
+	cover,
+	truncated = false,
+} = Astro.props;
+---
+
+<a
+  href={href}
+  class="group relative flex cursor-pointer rounded-2xl border border-dashed border-transparent bg-white/90 p-7 dark:bg-neutral-900/85"
+>
+  <div
+    class="pointer-events-none absolute inset-0 z-[25] opacity-0 transition duration-300 ease-out group-hover:opacity-100"
+  >
+    <div
+      class="absolute -left-6 top-0 h-20 w-20 rounded-full bg-amber-100/70 blur-2xl dark:bg-amber-400/10"
+    >
+    </div>
+    <div
+      class="absolute -bottom-4 right-0 h-20 w-20 rounded-full bg-sky-100/70 blur-2xl dark:bg-cyan-400/10"
+    >
+    </div>
+  </div>
+
+  <div class="flex-1">
+    <div
+      class="absolute inset-0 z-20 h-full w-full rounded-2xl border border-dashed border-neutral-300 bg-white duration-300 ease-out group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:border-solid dark:border-neutral-600 dark:bg-neutral-950"
+    >
+    </div>
+    <div
+      class="absolute inset-0 z-10 h-full w-full rounded-2xl border border-dashed border-neutral-300 shadow-lg duration-300 ease-out group-hover:translate-x-1 group-hover:translate-y-1 group-hover:shadow-xl dark:border-neutral-600"
+    >
+    </div>
+
+    <div
+      class="relative z-30 duration-300 ease-out group-hover:-translate-x-1 group-hover:-translate-y-1"
+    >
+      {
+        cover && (
+          <span class="mb-4 hidden aspect-[4/1] w-full overflow-hidden rounded-xl sm:block">
+            <img
+              src={cover}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              class="h-full w-full object-cover"
+            />
+          </span>
+        )
+      }
+
+      <h2 class="mb-3 flex items-center">
+        <span class="text-xl font-bold leading-tight tracking-tight text-neutral-900 sm:text-2xl dark:text-neutral-100">
+          {title}
+        </span>
+        <ArrowIcon class="ml-1" />
+      </h2>
+
+      {
+        description && (
+          <p class="text-sm text-neutral-600 dark:text-neutral-400">
+            {description}
+          </p>
+        )
+      }
+
+      <div
+        class="mt-2.5 flex flex-wrap items-center gap-2 text-xs font-medium text-neutral-800 dark:text-neutral-300"
+      >
+        <span>发布于：{dateFormatted}</span>
+        {
+          truncated && (
+            <span class="rounded-full border border-dashed border-neutral-300 px-2 py-0.5 dark:border-neutral-600">
+              仅摘要
+            </span>
+          )
+        }
+      </div>
+    </div>
+  </div>
+</a>

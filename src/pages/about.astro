@@ -1,60 +1,74 @@
 ---
+import about from "../collections/about.json";
 import experiences from "../collections/experiences.json";
+import site from "../collections/site.json";
 import AboutExperience from "../components/about-experience.astro";
 import PageHeading from "../components/page-heading.astro";
+import PlaceholderMedia from "../components/placeholder-media.astro";
 import Layout from "../layouts/main.astro";
 ---
 
-<Layout title="About Me">
-  <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0">
-    <PageHeading
-      title="About Me"
-      description="Hello 👋 I'm a frontend engineer from Nanjing, China. I'm passionate about building new products and learning new technology."
-    />
+<Layout title="关于" description={about.shortBio}>
+  <section class="relative z-20 mx-auto mt-12 max-w-4xl px-7 lg:px-0">
+    <PageHeading eyebrow="About" title="关于我" description={about.shortBio} />
 
-    <img src="/assets/images/about.jpg" class="relative z-30 w-full my-10 rounded-xl" />
+    {
+      about.photo ? (
+        <img
+          src={about.photo}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          class="my-10 w-full rounded-panel border border-dashed border-neutral-300 object-cover dark:border-neutral-700"
+        />
+      ) : (
+        <PlaceholderMedia
+          initial={site.name}
+          class="my-10 aspect-[3/1] w-full rounded-panel border border-dashed border-neutral-300 text-5xl dark:border-neutral-700"
+        />
+      )
+    }
 
-    <h2 class="mb-2 text-2xl font-bold dark:text-neutral-200">Short Bio</h2>
-    <p
-      class="text-sm leading-6 text-gray-600 dark:text-neutral-400 sm:leading-7 lg:leading-8 sm:text-base lg:text-lg"
-    >
-      Front-end cutter 🧑🏻‍💻, back-end amateur 🤷🏻‍♂️, operations digging holes person 🤦🏻‍♂️.
-    </p>
-
-    <h2
-      class="mt-5 mb-2 text-2xl font-bold lg:mt-10 sm:mt-6 dark:text-neutral-200"
-    >
-      Experience
+    <h2 class="mb-4 text-2xl font-bold text-neutral-900 dark:text-neutral-100">
+      {about.experienceTitle}
     </h2>
-    <div class="px-5 py-10">
+    <div>
       {
-        experiences.map((experience) => {
-          return (
-            <div class="pb-10 border-l border-gray-200 last:border-l-0 dark:border-neutral-700">
-              <AboutExperience
-                dates={experience.dates}
-                role={experience.role}
-                company={experience.company}
-                description={experience.description}
-                logo={experience.logo}
-              />
-            </div>
-          )
-        })
+        experiences.map((experience) => (
+          <div class="border-l border-dashed border-neutral-300 pb-10 last:border-l-0 dark:border-neutral-700">
+            <AboutExperience
+              dates={experience.dates}
+              role={experience.role}
+              company={experience.company}
+              description={experience.description}
+              logo={experience.logo}
+            />
+          </div>
+        ))
       }
     </div>
 
-    <h2 class="mt-5 mb-2 text-2xl font-bold lg:mt-10 sm:mt-6 dark:text-neutral-200">Let's Connect</h2>
-    <p
-      class="text-sm leading-6 text-gray-600 dark:text-neutral-400 sm:leading-7 lg:leading-8 sm:text-base lg:text-lg"
+    <h2
+      class="mb-4 mt-8 text-2xl font-bold text-neutral-900 dark:text-neutral-100"
     >
-      If you want to stay up to date with my work be sure to <a
-        href="https://x.com/0xKaibi"
-        target="_blank"
-        class="text-indigo-600 underline">follow me on twitter</a
-      >, or you can send me an <a href="mailto:astro-aria#miantiao.me" class="text-indigo-600 underline"
-        >email</a
-      > and I'll be sure to get back to you.
+      {about.connectTitle}
+    </h2>
+    <p class="text-base leading-8 text-neutral-600 dark:text-neutral-400">
+      {about.connect}
     </p>
+    <div class="mt-5 flex flex-wrap gap-3">
+      {
+        about.links.map((link) => (
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="rounded-full border border-dashed border-neutral-300 px-3 py-1.5 text-xs text-neutral-700 transition duration-300 ease-out hover:border-neutral-900 hover:text-neutral-900 dark:border-neutral-700 dark:text-neutral-200 dark:hover:border-white dark:hover:text-white"
+          >
+            {link.text}
+          </a>
+        ))
+      }
+    </div>
   </section>
 </Layout>

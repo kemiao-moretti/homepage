@@ -1,44 +1,14 @@
 [
 	{
-		"name": "BroadcastChannel",
-		"description": "Turn your Telegram Channel into a MicroBlog.",
-		"image": "https://github.html.zone/miantiao-me/BroadcastChannel",
-		"url": "https://memo.miantiao.me"
+		"name": "占位项目一",
+		"description": "占位：一句话说明这个项目解决了什么问题。字段结构与下一条相同，自由增删条目即可。",
+		"image": "",
+		"url": "https://example.com"
 	},
 	{
-		"name": "aigc-weekly",
-		"description": "An AIGC curation weekly powered by an agentic AI agent.",
-		"image": "https://github.html.zone/miantiao-me/aigc-weekly",
-		"url": "https://aigc-weekly.agi.li"
-	},
-	{
-		"name": "Sink",
-		"description": "A simple, speedy, and secure link shortener with analytics, running 100% on Cloudflare.",
-		"image": "https://github.html.zone/miantiao-me/Sink",
-		"url": "https://Sink.Cool"
-	},
-	{
-		"name": "ssh-ai-chat",
-		"description": "Chat with AI over SSH.",
-		"image": "https://github.html.zone/miantiao-me/ssh-ai-chat",
-		"url": "https://chat.agi.li"
-	},
-	{
-		"name": "cloud-code",
-		"description": "Cloud Code (Cloudflare + OpenCode), running OpenCode on Cloudflare to build a dedicated cloud Agent for you.",
-		"image": "https://github.html.zone/miantiao-me/cloud-code",
-		"url": "https://github.com/miantiao-me/cloud-code"
-	},
-	{
-		"name": "bm.md",
-		"description": "A better Markdown formatting assistant with one-click output for WeChat Official Accounts, web pages, and images.",
-		"image": "https://github.html.zone/miantiao-me/bm.md",
-		"url": "https://bm.md"
-	},
-	{
-		"name": "hacker-podcast",
-		"description": "An AI-powered Hacker News podcast that fetches trending stories daily, summarizes them with AI, and turns them into audio episodes.",
-		"image": "https://github.html.zone/miantiao-me/hacker-podcast",
-		"url": "https://hacker-podcast.agi.li"
+		"name": "占位项目二",
+		"description": "占位：第二个项目的说明。image 留空会自动渲染渐变占位图，填了就显示你的截图。",
+		"image": "",
+		"url": "https://example.com"
 	}
 ]

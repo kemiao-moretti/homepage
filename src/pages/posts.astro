@@ -4,15 +4,19 @@ import PostsLoop from "../components/posts-loop.astro";
 import Layout from "../layouts/main.astro";
 ---
 
-<Layout title="My Writing">
-  <section class="relative z-20 max-w-2xl mx-auto my-12 px-7 lg:px-0">
+<Layout
+  title="文章"
+  description="克喵的全部文章，内容同步自 blog.518339.xyz，点开即可在本站读到全文。"
+>
+  <section class="relative z-20 mx-auto mt-12 max-w-6xl px-7 lg:px-0">
     <PageHeading
-      title="My Writing"
-      description="Dive into my musings on life and tech in my latest posts; a blend of introspection and innovation. Keep an eye out for fresh insights and updates!"
+      eyebrow="All Posts"
+      title="文章"
+      description="全部文章都从我的博客同步，点开即可在本站读全文；想订阅更新可以直接用右侧入口或 RSS。"
     />
 
-    <div class="z-50 flex flex-col items-stretch w-full gap-5 my-8">
-      <PostsLoop count="999999999" />
+    <div class="my-10">
+      <PostsLoop count="all" />
     </div>
   </section>
 </Layout>

@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+
+Sitemap: https://home.518339.xyz/sitemap-index.xml

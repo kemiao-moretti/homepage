@@ -2,20 +2,16 @@
 
 window.darkMode = false;
 
-const stickyClasses = ["fixed", "h-14"];
-const unstickyClasses = ["absolute", "h-20"];
-const stickyClassesContainer = [
-	"border-neutral-300/50",
-	"bg-white/80",
-	"dark:border-neutral-600/40",
-	"dark:bg-neutral-900/60",
-	"backdrop-blur-2xl",
-];
-const unstickyClassesContainer = ["border-transparent"];
 let headerElement = null;
+let headerShell = null;
+let headerSurface = null;
+let isPill = false;
+let ticking = false;
 
 document.addEventListener("DOMContentLoaded", () => {
 	headerElement = document.getElementById("header");
+	headerShell = headerElement?.firstElementChild ?? null;
+	headerSurface = headerShell?.firstElementChild ?? null;
 
 	if (
 		localStorage.getItem("dark_mode") &&
@@ -26,60 +22,54 @@ document.addEventListener("DOMContentLoaded", () => {
 	} else {
 		showDay();
 	}
-	stickyHeaderFuncionality();
-	applyMenuItemClasses();
+
 	evaluateHeaderPosition();
+	applyMenuItemClasses();
 	mobileMenuFunctionality();
+	darkToggleFunctionality();
+	feedCopyFunctionality();
+	codeCopyDelegate();
+
+	window.addEventListener("scroll", onScroll, { passive: true });
 });
 
-// window.toggleDarkMode = function(){
-//     document.documentElement.classList.toggle('dark');
-//     if(document.documentElement.classList.contains('dark')){
-//         localStorage.setItem('dark_mode', true);
-//         window.darkMode = true;
-//     } else {
-//         window.darkMode = false;
-//         localStorage.setItem('dark_mode', false);
-//     }
-// }
-
-window.stickyHeaderFuncionality = () => {
-	window.addEventListener("scroll", () => {
+function onScroll() {
+	if (ticking) return;
+	ticking = true;
+	window.requestAnimationFrame(() => {
+		ticking = false;
 		evaluateHeaderPosition();
 	});
-};
+}
 
+// 悬浮胶囊变形：滚动超过 12px 时给 shell / surface 同时挂 .is-pill。
+// 用语义类而不是原子类，避免依赖 Tailwind 对 JS 字符串里类名的扫描。
 window.evaluateHeaderPosition = () => {
-	if (window.scrollY > 16) {
-		headerElement.firstElementChild.classList.add(...stickyClassesContainer);
-		headerElement.firstElementChild.classList.remove(
-			...unstickyClassesContainer,
-		);
-		headerElement.classList.add(...stickyClasses);
-		headerElement.classList.remove(...unstickyClasses);
-		document.getElementById("menu").classList.add("top-[56px]");
-		document.getElementById("menu").classList.remove("top-[75px]");
-	} else {
-		headerElement.firstElementChild.classList.remove(...stickyClassesContainer);
-		headerElement.firstElementChild.classList.add(...unstickyClassesContainer);
-		headerElement.classList.add(...unstickyClasses);
-		headerElement.classList.remove(...stickyClasses);
-		document.getElementById("menu").classList.remove("top-[56px]");
-		document.getElementById("menu").classList.add("top-[75px]");
-	}
+	if (!headerShell || !headerSurface) return;
+
+	const pill = window.scrollY > 12;
+	if (pill === isPill) return;
+
+	isPill = pill;
+	headerShell.classList.toggle("is-pill", pill);
+	headerSurface.classList.toggle("is-pill", pill);
 };
 
-document.getElementById("darkToggle").addEventListener("click", () => {
-	document.documentElement.classList.add("duration-300");
+window.stickyHeaderFuncionality = onScroll;
 
-	if (document.documentElement.classList.contains("dark")) {
-		localStorage.removeItem("dark_mode");
-		showDay(true);
-	} else {
-		localStorage.setItem("dark_mode", true);
-		showNight(true);
-	}
-});
+function darkToggleFunctionality() {
+	document.getElementById("darkToggle")?.addEventListener("click", () => {
+		document.documentElement.classList.add("duration-300");
+
+		if (document.documentElement.classList.contains("dark")) {
+			localStorage.removeItem("dark_mode");
+			showDay(true);
+		} else {
+			localStorage.setItem("dark_mode", true);
+			showNight(true);
+		}
+	});
+}
 
 function showDay(animate) {
 	document.getElementById("sun").classList.remove("setting");
@@ -133,14 +123,22 @@ function showNight(animate) {
 	}, timeout);
 }
 
+// 导航当前项高亮已在 header.astro 里由服务端判定；
+// 这里保留运行时兜底，供客户端路由或锚点跳转后补正。
 window.applyMenuItemClasses = () => {
 	const menuItems = document.querySelectorAll("#menu a");
 	for (let i = 0; i < menuItems.length; i++) {
 		if (menuItems[i].pathname === window.location.pathname) {
-			menuItems[i].classList.add("text-neutral-900", "dark:text-white");
+			menuItems[i].classList.add(
+				"text-black",
+				"underline",
+				"decoration-dashed",
+				"decoration-1",
+				"underline-offset-4",
+				"dark:text-white",
+			);
 		}
 	}
-	//:class="{ 'text-neutral-900 dark:text-white': window.location.pathname == '{menu.url}', 'text-neutral-700 dark:text-neutral-400': window.location.pathname != '{menu.url}' }"
 };
 
 function mobileMenuFunctionality() {
@@ -173,3 +171,46 @@ window.closeMobileMenu = () => {
 	document.getElementById("menu").classList.add("hidden");
 	document.getElementById("mobileMenuBackground").classList.add("hidden");
 };
+
+// 订阅卡：复制 RSS 地址
+function feedCopyFunctionality() {
+	const button = document.getElementById("copyFeedUrl");
+	if (!button) return;
+
+	button.addEventListener("click", async () => {
+		const value = document.getElementById("feedUrl")?.value ?? "";
+		if (!value) return;
+
+		try {
+			await navigator.clipboard.writeText(value);
+		} catch {
+			// 剪贴板 API 不可用时退化为「选中让用户手动复制」
+			document.getElementById("feedUrl")?.select();
+			return;
+		}
+
+		const original = button.textContent;
+		button.textContent = "已复制";
+		setTimeout(() => {
+			button.textContent = original;
+		}, 1500);
+	});
+}
+
+// 远程文章正文里的代码复制按钮（博客主题的 data-code-copy）
+function codeCopyDelegate() {
+	document.addEventListener("click", async (event) => {
+		const trigger = event.target?.closest?.("[data-code-copy]");
+		if (!trigger) return;
+
+		const container = trigger.closest("figure") ?? trigger.parentElement;
+		const code = container?.querySelector("code")?.textContent ?? "";
+		if (!code) return;
+
+		try {
+			await navigator.clipboard.writeText(code);
+		} catch {
+			/* 剪贴板不可用时静默降级 */
+		}
+	});
+}

@@ -1,0 +1,29 @@
+---
+const { rows = 8, cols = 15 } = Astro.props;
+---
+
+<div
+  class="pointer-events-none absolute inset-x-0 top-0 -z-10 overflow-hidden"
+  aria-hidden="true"
+>
+  <div class="tile-region-shell relative w-full">
+    <div
+      class="tile-grid grid-fade absolute right-[-5rem] top-0 flex flex-col opacity-95 md:right-[-3rem] xl:right-[-1rem] dark:opacity-82"
+    >
+      {
+        Array.from({ length: rows }, (_, i) => (
+          <div
+            class:list={[
+              "tile-line flex items-center justify-end",
+              i % 2 === 1 && "tile-line-shifted",
+            ]}
+          >
+            {Array.from({ length: cols }, () => (
+              <div class="tile-square border border-dashed border-neutral-500/75 bg-transparent dark:border-white/38" />
+            ))}
+          </div>
+        ))
+      }
+    </div>
+  </div>
+</div>

@@ -6,12 +6,57 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-	/* 锁定 v3 的默认字体栈：v4 默认换成了以 -apple-system 开头的长栈，
+	/* 锁定 v3 的默认无衬线栈：v4 默认换成了以 -apple-system 开头的长栈，
 	   在 Windows 上会落到经典 Segoe UI 而非 ui-sans-serif 指向的系统字体，
-	   导致文字字宽与换行位置发生变化。这里保持升级前的渲染结果。 */
+	   导致文字字宽与换行位置发生变化。 */
 	--font-sans:
 		ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
 		"Segoe UI Symbol", "Noto Color Emoji";
+
+	/* 正文主字体：朱雀仿宋（OFL）。分片 CSS 在 main.astro 里按 unicode-range 加载 */
+	--font-serif:
+		"Zhuque Fangsong (technical preview)", "Noto Sans SC", "Songti SC",
+		"Noto Serif SC", "SimSun", serif;
+
+	/* 主色（目标站实测值，等同 Tailwind amber / sky / cyan / emerald 默认色） */
+	--color-brand-warm: oklch(96.2% 0.059 95.617);
+	--color-brand-warm-strong: oklch(82.8% 0.189 84.429);
+	--color-brand-cool: oklch(95.1% 0.026 236.824);
+	--color-brand-cool-strong: oklch(78.9% 0.154 211.53);
+	--color-brand-signal: oklch(69.6% 0.17 162.48);
+
+	/* 圆角阶梯（目标站实测） */
+	--radius-inner: 1.22rem;
+	--radius-card: 1rem;
+	--radius-panel: 1.5rem;
+	--radius-site: 1.55rem;
+	--radius-shell: 2rem;
+
+	/* 阴影（目标站实测四组） */
+	--shadow-card: 0 20px 42px -34px rgb(15 23 42 / 0.42);
+	--shadow-card-dark: 0 20px 42px -34px rgb(0 0 0 / 0.74);
+	--shadow-footer: 0 26px 70px -58px rgb(15 23 42 / 0.52);
+	--shadow-header: 0 18px 42px -32px rgb(15 23 42 / 0.42);
+
+	--ease-swift: cubic-bezier(0.4, 0, 0.2, 1);
+	--ease-fluid: cubic-bezier(0, 0, 0.2, 1);
+
+	--animate-rising: rising 1s ease;
+	--animate-setting: setting 1s ease;
+}
+
+/* 非 Tailwind 命名空间的变量 */
+:root {
+	--hero-offset: 80px;
+	--scrollbar-thumb: #73737347;
+	--scrollbar-thumb-hover: #7373736b;
+	--scrollbar-track: #ffffff14;
+}
+
+html.dark {
+	--scrollbar-thumb: #a3a3a338;
+	--scrollbar-thumb-hover: #a3a3a357;
+	--scrollbar-track: #0a0a0a14;
 }
 
 @layer base {
@@ -20,36 +65,269 @@
 	[role="button"]:not(:disabled) {
 		cursor: pointer;
 	}
+
+	html.dark {
+		color-scheme: dark;
+	}
 }
 
-/* Add Your Custom CSS Here */
+/* body 双色温渐变背景（目标站原值照搬）。
+   放在顶层而非 base 层 —— 页面里不再给 body 挂 bg 工具类，由这里独占控制。 */
+body {
+	font-family: var(--font-serif);
+	background-color: #fff;
+	background-image:
+		radial-gradient(circle at 0 0, #fbbf2414, #0000 24%),
+		radial-gradient(circle at 100% 0, #38bdf814, #0000 22%),
+		linear-gradient(#fffffffa, #fffffffa);
+}
 
+html.dark body {
+	background-color: #0a0a0a;
+	background-image:
+		radial-gradient(circle at 0 0, #f59e0b14, #0000 28%),
+		radial-gradient(circle at 100% 0, #22d3ee14, #0000 24%),
+		linear-gradient(#0a0a0afa, #0a0a0afa);
+}
+
+/* --- 以下自定义类全部放在顶层（unlayered）。
+       Tailwind v4 的 utilities 层在 components 层之后，若写在 @layer components 里，
+       .h-20 / .bg-transparent 这类工具类会把它们压掉。unlayered 优先于所有 layer。 --- */
+
+/* 悬浮胶囊 header —— JS 只切语义类 .is-pill */
+.header-shell {
+	transition: transform 300ms var(--ease-fluid);
+}
+
+.header-shell.is-pill {
+	transform: translateY(0.35rem);
+}
+
+.header-surface {
+	transition-property:
+		background-color, border-color, box-shadow, backdrop-filter, height,
+		max-width, border-radius;
+	transition-duration: 300ms;
+	transition-timing-function: var(--ease-fluid);
+}
+
+.header-surface.is-pill {
+	width: calc(100% - 1.45rem);
+	max-width: none;
+	height: 3.15rem;
+	border-radius: 1.35rem;
+	border-color: rgb(212 212 212 / 0.55);
+	background-color: rgb(255 255 255 / 0.78);
+	-webkit-backdrop-filter: blur(24px);
+	backdrop-filter: blur(24px);
+	box-shadow: var(--shadow-header);
+}
+
+@media (min-width: 640px) {
+	.header-surface.is-pill {
+		width: calc(100% - 1.75rem);
+	}
+}
+
+@media (min-width: 1024px) {
+	.header-surface.is-pill {
+		width: calc(100% - 2.25rem);
+	}
+}
+
+@media (min-width: 1280px) {
+	.header-surface.is-pill {
+		max-width: 74.5rem;
+	}
+}
+
+html.dark .header-surface.is-pill {
+	background-color: rgb(23 23 23 / 0.72);
+	border-color: rgb(64 64 64 / 0.6);
+}
+
+/* 首屏 hero —— 撑满首屏并整体上移，与目标站一致 */
+.homepage-hero {
+	min-height: calc(100svh - 80px);
+	transform: translateY(-1.75rem);
+}
+
+.hero-surface {
+	-webkit-backdrop-filter: none;
+	backdrop-filter: none;
+	background: none;
+}
+
+.frost-panel {
+	-webkit-backdrop-filter: blur(14px);
+	backdrop-filter: blur(14px);
+	background: linear-gradient(#ffffffb8, #ffffff94);
+}
+
+html.dark .frost-panel {
+	background: linear-gradient(#171717b8, #0a0a0a99);
+}
+
+.footer-shell {
+	-webkit-backdrop-filter: blur(16px);
+	backdrop-filter: blur(16px);
+	background: linear-gradient(#ffffffb8, #ffffff94);
+}
+
+html.dark .footer-shell {
+	background: linear-gradient(#171717bd, #0a0a0a9e);
+}
+
+/* 瓷砖网格：mask-image 无法用工具类表达，必须手写 */
+.tile-region-shell {
+	height: 48rem;
+}
+
+.tile-grid {
+	--tile-size: 3rem;
+	--tile-gap: 0.4rem;
+	gap: var(--tile-gap);
+	transform: translateY(calc(var(--tile-size) / -3));
+}
+
+.tile-line {
+	gap: var(--tile-gap);
+}
+
+.tile-line-shifted {
+	transform: translate(calc(var(--tile-size) / 2));
+}
+
+.tile-square {
+	width: var(--tile-size);
+	height: var(--tile-size);
+	border-radius: calc(var(--tile-size) * 0.18);
+	flex: none;
+}
+
+.grid-fade {
+	-webkit-mask-image: radial-gradient(
+		94% 82% at 100% 0,
+		#000 0%,
+		#000000fc 30%,
+		#000000eb 58%,
+		#000000b8 80%,
+		#00000047 92%,
+		#0000 100%
+	);
+	mask-image: radial-gradient(
+		94% 82% at 100% 0,
+		#000 0%,
+		#000000fc 30%,
+		#000000eb 58%,
+		#000000b8 80%,
+		#00000047 92%,
+		#0000 100%
+	);
+}
+
+@media (min-width: 640px) {
+	.tile-grid {
+		--tile-size: 3.9rem;
+		--tile-gap: 0.52rem;
+	}
+}
+
+@media (min-width: 768px) {
+	.tile-grid {
+		--tile-size: 4.65rem;
+		--tile-gap: 0.62rem;
+	}
+}
+
+@media (min-width: 1280px) {
+	.tile-grid {
+		--tile-size: 5.4rem;
+		--tile-gap: 0.72rem;
+	}
+}
+
+@media (max-width: 1023px) {
+	.homepage-hero {
+		min-height: auto;
+		transform: translateY(-0.5rem);
+	}
+
+	.tile-region-shell {
+		height: 32rem;
+	}
+
+	.grid-fade {
+		-webkit-mask-image: radial-gradient(
+			122% 88% at 100% 0,
+			#000000fc 0%,
+			#000000f5 30%,
+			#000000d1 56%,
+			#0000008f 76%,
+			#0003 90%,
+			#0000 100%
+		);
+		mask-image: radial-gradient(
+			122% 88% at 100% 0,
+			#000000fc,
+			#000000f5 30%,
+			#000000d1 56%,
+			#0000008f 76%,
+			#0003 90%,
+			#0000
+		);
+	}
+}
+
+/* 滚动条 —— 注意 html 上的 scrollbar-width: thin 会让 Chrome 走 11px 原生细条，
+   与目标站一致；仅靠 ::-webkit-scrollbar 会是 7px，导致瓷砖网格横向偏 4px */
+html {
+	scrollbar-width: thin;
+	scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+html::-webkit-scrollbar {
+	width: 7px;
+	height: 7px;
+}
+
+html::-webkit-scrollbar-track {
+	background: var(--scrollbar-track);
+}
+
+html::-webkit-scrollbar-thumb {
+	background: linear-gradient(to bottom, #94a3b82e, var(--scrollbar-thumb));
+	background-clip: padding-box;
+	border: 2px solid #0000;
+	border-radius: 999px;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(
+		to bottom,
+		#94a3b83d,
+		var(--scrollbar-thumb-hover)
+	);
+}
+
+/* 文章配图圆角（目标站实测 30px） */
 .prose img {
 	border-radius: 30px;
 }
 
-#sun {
-	transform: translate3d(0, 0px, 0);
-}
-
+/* 日夜切换动效（沿用上游，keyframes 已修正上游缺失单位的无效值） */
+#sun,
 #moon {
-	transform: translate3d(0, 0px, 0);
+	transform: translate3d(0, 0, 0);
 }
 
-#darkToggle:hover #sun {
-	transform: translate3d(0, 10px, 0);
-}
-
+#darkToggle:hover #sun,
 #darkToggle:hover #moon {
 	transform: translate3d(0, 10px, 0);
 }
 
 html.dark #darkToggle:hover .horizon {
 	border-color: #718096 !important;
-}
-
-html.dark {
-	color-scheme: dark;
 }
 
 .horizon .setting {
@@ -87,6 +365,6 @@ html.dark {
 
 	to {
 		opacity: 1;
-		transform: translate3d(0, 10, 0);
+		transform: translate3d(0, 10px, 0);
 	}
 }

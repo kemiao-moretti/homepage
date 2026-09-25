@@ -1,0 +1,14 @@
+[
+	{
+		"name": "个人博客",
+		"url": "https://blog.518339.xyz",
+		"screenshot": "",
+		"description": "主博客，技术文章与生活记录都在这里，本站的文章也全部同步自它。"
+	},
+	{
+		"name": "占位站点二",
+		"url": "https://example.com",
+		"screenshot": "",
+		"description": "占位：另一个站点的说明。screenshot 留空会自动渲染渐变占位图。"
+	}
+]

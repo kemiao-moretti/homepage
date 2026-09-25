@@ -1,0 +1,46 @@
+---
+import ArrowIconGlyph from "./arrow-icon-glyph.astro";
+
+const { title, body, width = "md:max-w-[18.5rem]" } = Astro.props;
+---
+
+<aside
+  class:list={[
+    "group relative w-full overflow-hidden rounded-panel border border-dashed border-neutral-300 bg-white/86 px-4 py-4 shadow-sm backdrop-blur-sm transition duration-300 ease-out hover:-translate-y-0.5 hover:border-neutral-400 hover:shadow-[0_20px_42px_-34px_rgba(15,23,42,0.42)] dark:border-neutral-700 dark:bg-neutral-900/76 dark:shadow-[0_20px_42px_-36px_rgba(0,0,0,0.74)] dark:hover:border-neutral-600",
+    width,
+  ]}
+>
+  <div
+    class="pointer-events-none absolute inset-0 opacity-0 transition duration-300 ease-out group-hover:opacity-100"
+  >
+    <div
+      class="absolute -left-5 top-0 h-14 w-14 rounded-full bg-amber-100/55 blur-2xl dark:bg-amber-400/10"
+    >
+    </div>
+    <div
+      class="absolute -bottom-8 right-0 h-14 w-14 rounded-full bg-sky-100/55 blur-2xl dark:bg-cyan-400/10"
+    >
+    </div>
+  </div>
+  <div class="relative flex items-start gap-3">
+    <div class="min-w-0 flex-1">
+      <h3
+        class="line-clamp-1 text-sm font-semibold tracking-tight text-neutral-900 dark:text-neutral-100"
+      >
+        {title}
+      </h3>
+      {
+        body && (
+          <p class="mt-1.5 line-clamp-2 text-sm leading-6 text-neutral-600 dark:text-neutral-400">
+            {body}
+          </p>
+        )
+      }
+    </div>
+    <span
+      class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white/92 text-neutral-500 transition duration-300 ease-out group-hover:-translate-y-0.5 group-hover:text-neutral-900 dark:border-neutral-700 dark:bg-neutral-950/70 dark:text-neutral-300 dark:group-hover:text-white"
+    >
+      <ArrowIconGlyph class="h-3.5 w-3.5 -rotate-45" />
+    </span>
+  </div>
+</aside>

@@ -1,0 +1,11 @@
+{
+	"shortBio": "占位：一段简短的自我介绍，改这里就能换内容。",
+	"photo": "",
+	"experienceTitle": "经历",
+	"connectTitle": "联系我",
+	"connect": "占位：想聊点什么的话，可以通过下面的方式找我。",
+	"links": [
+		{ "text": "GitHub", "url": "https://github.com/kemiao-moretti" },
+		{ "text": "博客", "url": "https://blog.518339.xyz" }
+	]
+}

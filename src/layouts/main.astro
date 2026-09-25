@@ -1,18 +1,64 @@
 ---
 import "../assets/css/main.css";
+import site from "../collections/site.json";
+import Atmosphere from "../components/atmosphere.astro";
+import Endnote from "../components/endnote.astro";
 import Footer from "../components/footer.astro";
 import Header from "../components/header.astro";
-import SquareLines from "../components/square-lines.astro";
+import TileGrid from "../components/tile-grid.astro";
 
-const { title } = Astro.props;
+const {
+	title = site.title,
+	description = site.description,
+	type = "website",
+	image = "",
+} = Astro.props;
+
+const isHome = Astro.url.pathname === "/";
+const pageTitle = isHome ? site.title : `${title} · ${site.name}`;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = image ? new URL(image, Astro.site).href : "";
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{title}</title>
+
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="generator" content={Astro.generator} />
+
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content="zh_CN" />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+
+    <meta
+      name="twitter:card"
+      content={ogImage ? "summary_large_image" : "summary"}
+    />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title={site.name}
+      href={site.subscribe.feedUrl}
+    />
+
+    <!-- 朱雀仿宋（TrionesType，OFL-1.1）分片字体，锁 commit SHA 防上游变动 -->
+    <link rel="preconnect" href="https://cdn.jsdmirror.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdmirror.com/gh/willow-god/Sharding-fonts@31edab303b89f4fc38d17f10e45d81140c510c97/ZhuqueFangsong-Regular/result.min.css"
+    />
 
     <!-- Used to add dark mode right away, adding here prevents any flicker -->
     <script is:inline>
@@ -26,19 +72,17 @@ const { title } = Astro.props;
       }
     </script>
 
-    <style>
-      .prose img {
-        border-radius: 20px;
-      }
-    </style>
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.png" />
     <Fragment set:html={import.meta.env.HEADER_INJECT} />
   </head>
-  <body class="antialiased bg-white dark:bg-neutral-950">
-    <SquareLines />
+  <body class="antialiased">
+    <Atmosphere />
+    <TileGrid />
     <Header />
     <slot />
-    <Footer />
+    <Endnote>
+      <Footer />
+    </Endnote>
     <script>import "../assets/js/main.js";</script>
     <Fragment set:html={import.meta.env.FOOTER_INJECT} />
   </body>
