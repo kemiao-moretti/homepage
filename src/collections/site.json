@@ -2,13 +2,13 @@
 	"name": "克喵:)",
 	"logoIcon": "〄",
 	"title": "克喵 · 个人主页",
-	"description": "克喵的个人主页 —— 文章、项目，以及在别处的站点。",
+	"description": "克喵的个人主页 —— 文章、项目，以及一些别的记录。",
 	"hero": {
 		"badge": "PERSONAL SPACE",
 		"title": "我是克喵:)，",
-		"subtitle": "把折腾过的东西写下来，慢慢攒成一间自己的房间。",
-		"intro": "这里放我的文章、项目和散落在别处的站点。文章正文直接从博客同步过来，所以这边看到的永远是最新那一份。",
-		"skills": ["技术文章", "分享生活", "日常点滴"],
+		"subtitle": "每一段旅行，都有终点。",
+		"intro": "大四学生，待业中。使用Ai魔改博客、项目、网页，有时会记录下期间的一些经历、生活日常和一些值得记录的项目。",
+		"skills": ["“技术”文章", "分享生活", "日常点滴"],
 		"cta": [
 			{ "text": "阅读文章", "link": "/posts", "variant": "primary" },
 			{ "text": "关于我", "link": "/about", "variant": "secondary" }
@@ -21,7 +21,7 @@
 		"sinceLabel": "Since"
 	},
 	"subscribe": {
-		"feedUrl": "https://blog.518339.xyz/posts/index.xml",
+		"feedUrl": "https://blog.518339.xyz/index.xml",
 		"title": "订阅我的博客",
 		"description": "通过以下方式订阅，新文章发布后会自动推送。"
 	},
