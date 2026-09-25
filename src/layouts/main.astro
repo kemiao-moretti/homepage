@@ -12,11 +12,14 @@ const {
 	description = site.description,
 	type = "website",
 	image = "",
+	canonical: canonicalOverride = "",
 } = Astro.props;
 
 const isHome = Astro.url.pathname === "/";
 const pageTitle = isHome ? site.title : `${title} · ${site.name}`;
-const canonical = new URL(Astro.url.pathname, Astro.site).href;
+// 文章页是博客的镜像（卡片一律跳原文），canonical 交回博客，避免被判重复内容
+const canonical =
+	canonicalOverride || new URL(Astro.url.pathname, Astro.site).href;
 const ogImage = image ? new URL(image, Astro.site).href : "";
 ---
 

@@ -166,13 +166,21 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 
 `dateFormatted` 由 loader 产出，格式是 **`M/D/YYYY`**（如 `9/22/2026`），与目标站一致；**不要**改回 `<Mon> <day>, <year>` 三段式。
 
-### 6.3 五个 JSON 集合都是"保留 key、值置 `""`"
+### 6.3 文章卡一律跳博客原文，不在本站打开
+
+`PostsLoop` 传给 `ArticleCard` 的是 `href={post.data.sourceUrl}` + `external`，即 `https://blog.518339.xyz/p/<slug>`，`_blank` 新标签打开，箭头额外 `-rotate-45` 表示外链。
+
+`/post/[slug]` **仍然构建**（7 页里占 2 页）——它是旧分享链接与 SEO 的兜底，但站内已无入口。为免被判「重复内容」，`main.astro` 暴露了 `canonical` prop，`post.astro` 传 `frontmatter.sourceUrl` 把 canonical 交回博客；其余页面不传 → 默认指本站自身。
+
+想改回站内阅读：`posts-loop.astro` 的 `href` 换回 `` `/post/${post.id}` `` 并去掉 `external`，同时删掉 `post.astro` 里那行 `canonical={frontmatter.sourceUrl}`。
+
+### 6.4 五个 JSON 集合都是"保留 key、值置 `""`"
 
 `projects.json` 的 `image`、`sites.json` 的 `screenshot`、`experiences.json` 的 `logo`、`about.json` 的 `photo`、`site.json` 的 `profile.avatar` **都是空串而不是删除**。
 
 原因：Astro 从 JSON 推断出的字面类型**逐字段推断**，删掉 key 会让另外几处 `item.image` 的访问报 `ts(2339) Property 'image' does not exist`（实测一次踩到 7 个错）。空串语义也更好读：**空 = 未设置 → 渲染占位块**。
 
-### 6.4 SEO（`src/layouts/main.astro`）
+### 6.5 SEO（`src/layouts/main.astro`）
 
 `site` 已在 `astro.config.mjs` 配成 `https://home.518339.xyz`，canonical / og / sitemap / robots 全依赖它。输出 `<title>`、`description`、`rel=canonical`、`generator`、`og:type|site_name|locale|title|description|url|image`、`twitter:card|title|description`、`rel=alternate`（RSS）。**换域名时记得同步改 `public/robots.txt` 的 Sitemap 行。**
 
@@ -381,7 +389,9 @@ cd homepage/homepage/dist && python -m http.server 4399 --bind 127.0.0.1
 # 2. 跑探针
 node .workbuddy/tmp/verify-b3.mjs  http://127.0.0.1:4399   # 交互回归 22 项
 node .workbuddy/tmp/verify-b8.mjs                            # 视觉判定表 152 项 + 截图
+node .workbuddy/tmp/verify-outlink.mjs http://127.0.0.1:4399 # 文章卡跳博客（真点击 + hover 截图）8 项
 node .workbuddy/tmp/probe-images.mjs                         # 图片加载 + 相对引用
+node .workbuddy/tmp/shot-view.mjs http://127.0.0.1:4399 <out> # 视口截图；TASKS 第 5 位传选择器可截元素特写
 ```
 
 Chrome 在 `C:/Users/Administrator/.cache/puppeteer/chrome/win64-131.0.6778.204/chrome-win64/chrome.exe`，用 `--headless=new --remote-debugging-port=N --user-data-dir=<temp> --no-sandbox --disable-gpu` 启动。
@@ -391,6 +401,13 @@ Chrome 在 `C:/Users/Administrator/.cache/puppeteer/chrome/win64-131.0.6778.204/
 1. **不要用绝对文档坐标做比较** —— `getBoundingClientRect().top` 会因文案长度不同累积偏移（实测 Δ 达 −709px）。用**相对量**，如 `aside.bottom − 描述.bottom`。
 2. **不要拿"卡片盒子的宽高比"当结构指标** —— 那是内容驱动的。取**卡内第一个 `aspect-ratio !== 'auto'` 的元素**当封面容器。
 3. **图片加载数是「假回归」高发区** —— 必须滚动到页底触发懒加载再数；外链图床失败不算布局回归。
+
+**验证"点一下到底发生了什么"，必须用真实输入事件**（`verify-outlink.mjs`）：
+
+- 静态 grep 产物只能证明属性写对了，证明不了浏览器行为。要证明 `target="_blank"` 真的开新标签，**必须在 browser 层监听**：连 `/json/version` 的 `webSocketDebuggerUrl` → `Target.setDiscoverTargets({discover:true})` → 收集 `targetCreated` / `targetInfoChanged` 的 `targetInfo.url`（popup 的 URL 是先空后补，只认 `targetCreated` 会拿到空串）。**页面 session 收不到 popup 的 Target 事件**，且在 page session 调 `Target.setAutoAttach({waitForDebuggerOnStart:true})` 会让 popup 卡在启动前。
+- 点击前先 `elementFromPoint(cx, cy)` 断言命中卡片自身，再发 `mouseMoved → mousePressed → mouseReleased`（`mousePressed` 带 `buttons:1`）。卡片中心常被 `z-[25]` 光斑层之类覆盖，但那些层是 `pointer-events-none`，命中检测能自动排除。
+- **验 `:hover` 态**：先移到 `(300,300)` 再移到目标，两次移动之间 sleep 一下；否则同一次移动可能被判为无变化。hover 后 `getComputedStyle` 读 `rotate`（Tailwind v4 用独立 `rotate` 属性，不是 `transform`）能区分「箭头显形」与「箭头方向对」。
+- **元素特写截图**用 `Page.captureScreenshot({clip, captureBeyondViewport:true})`，`clip` 是**文档坐标**（`rect.left + scrollX`）。比整页截图快得多，也不会像 `captureBeyondViewport` 截长页那样把 Chrome 挂住。
 
 长任务一律：`cmd > .workbuddy/tmp/x.log 2>&1` + `run_in_background: true`，**不要管道给 `tail`/`head`**（外壳被回收会连子进程一起带走）。
 

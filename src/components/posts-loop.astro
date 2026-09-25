@@ -15,7 +15,8 @@ const list = count === "all" ? posts : posts.slice(0, Number(count));
   {
     list.map((post) => (
       <ArticleCard
-        href={`/post/${post.id}`}
+        href={post.data.sourceUrl}
+        external
         title={post.data.title}
         description={post.data.description}
         dateFormatted={post.data.dateFormatted}

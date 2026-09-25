@@ -8,11 +8,14 @@ const {
 	dateFormatted,
 	cover,
 	truncated = false,
+	external = false,
 } = Astro.props;
 ---
 
 <a
   href={href}
+  target={external ? "_blank" : undefined}
+  rel={external ? "noopener noreferrer" : undefined}
   class="group relative flex cursor-pointer rounded-2xl border border-dashed border-transparent bg-white/90 p-7 dark:bg-neutral-900/85"
 >
   <div
@@ -59,7 +62,7 @@ const {
         <span class="text-xl font-bold leading-tight tracking-tight text-neutral-900 sm:text-2xl dark:text-neutral-100">
           {title}
         </span>
-        <ArrowIcon class="ml-1" />
+        <ArrowIcon class={external ? "ml-1 -rotate-45" : "ml-1"} />
       </h2>
 
       {
