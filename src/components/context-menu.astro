@@ -1,0 +1,194 @@
+---
+import pages from "../collections/pages.json";
+import Icon from "./icon.astro";
+
+const cm = pages.common.contextMenu;
+
+// 图标按钮没有文字位放快捷键提示，改由 title 承载 —— 悬停即见「后退 · Alt + ←」，
+// 信息一点没丢，只是从「右侧淡灰小字」收进了 tooltip。aria-label 只给纯名称，
+// 免得屏幕阅读器把快捷键也念一遍。
+const titled = (label, hint) => (hint ? `${label} · ${hint}` : label);
+
+// 顶排图标行：后退 / 前进 / 刷新 / 回到主页（+ 末尾的明暗切换，单独渲染）
+const actions = [
+	{ action: "back", icon: "arrow-left", label: cm.back, hint: cm.hintBack },
+	{
+		action: "forward",
+		icon: "arrow-right",
+		label: cm.forward,
+		hint: cm.hintForward,
+	},
+	{
+		action: "refresh",
+		icon: "refresh-cw",
+		label: cm.refresh,
+		hint: cm.hintRefresh,
+	},
+	{ action: "home", icon: "home", label: cm.home, hint: cm.hintHome },
+];
+
+// 图标行收走历史那三项之后，列表常态只剩滚动定位这两项
+const scrollItems = [
+	{ action: "top", icon: "chevrons-up", label: cm.top, hint: cm.hintTop },
+	{
+		action: "bottom",
+		icon: "chevrons-down",
+		label: cm.bottom,
+		hint: cm.hintBottom,
+	},
+];
+
+// 目标组：只有「右键落点确实命中链接 / 图片 / 选中文字」时才显示其中一部分，
+// 所以服务端把候选条目全渲染出来，JS 只按 data-cm-when 切 hidden —— 不拼 DOM，
+// Tailwind 的 dark: 变体与类名扫描才有效（见 AGENTS.md §9.7）。
+const targetItems = [
+	{
+		action: "copyText",
+		when: "text",
+		icon: "type",
+		label: cm.copyText,
+		hint: cm.hintCopyText,
+	},
+	{
+		action: "copyLink",
+		when: "link",
+		icon: "link",
+		label: cm.copyLink,
+		hint: "",
+	},
+	{
+		action: "openLink",
+		when: "link",
+		icon: "external-link",
+		label: cm.open,
+		hint: cm.hintOpen,
+	},
+	{
+		action: "copyImage",
+		when: "image",
+		icon: "image",
+		label: cm.copyImage,
+		hint: "",
+	},
+	{
+		action: "openImage",
+		when: "image",
+		icon: "external-link",
+		label: cm.open,
+		hint: cm.hintOpen,
+	},
+];
+---
+
+<!--
+  自定义右键菜单。整块 DOM 由服务端渲染，JS 只负责显隐、定位与状态，
+  这样 Tailwind 的 dark: 变体和类名扫描都能正常工作（见 AGENTS.md §9.7）。
+  初始态靠 .context-menu{display:none} 隐藏 —— display:none 本身已把元素移出无障碍树，
+  所以不再额外挂 aria-hidden，避免「关闭时仍可聚焦」这类状态不同步。
+
+  文案一律走 data-* 交给 JS：本文件里不留可见中文，main.js 里也不硬编码文案。
+-->
+<div
+  id="contextMenu"
+  class="context-menu"
+  role="menu"
+  aria-label={cm.title}
+  data-cm-root
+  data-cm-title-page={cm.title}
+  data-cm-title-link={cm.titleLink}
+  data-cm-title-image={cm.titleImage}
+  data-cm-title-text={cm.titleText}
+  data-cm-copied={cm.copied}
+  data-cm-copy-failed={cm.copyFailed}
+>
+  <div class="context-menu__atmosphere" aria-hidden="true">
+    <div class="context-menu__glow context-menu__glow--warm"></div>
+    <div class="context-menu__glow context-menu__glow--cool"></div>
+  </div>
+
+  <div class="context-menu__actions" role="presentation">
+    {
+      actions.map(({ action, icon, label, hint }) => (
+        <button
+          type="button"
+          role="menuitem"
+          tabindex="-1"
+          class="context-menu__action"
+          data-cm-action={action}
+          aria-label={label}
+          title={titled(label, hint)}
+        >
+          <Icon name={icon} class="h-[1.125rem] w-[1.125rem]" />
+        </button>
+      ))
+    }
+    <button
+      type="button"
+      role="menuitem"
+      tabindex="-1"
+      class="context-menu__action context-menu__action--theme"
+      data-cm-action="theme"
+      data-cm-theme-day={cm.themeToDay}
+      data-cm-theme-night={cm.themeToNight}
+      aria-label={cm.themeToNight}
+      title={cm.themeToNight}
+    >
+      <span
+        class="context-menu__glyph context-menu__glyph--moon"
+        data-cm-glyph="moon"
+      >
+        <Icon name="moon" class="h-[1.125rem] w-[1.125rem]" />
+      </span>
+      <span
+        class="context-menu__glyph context-menu__glyph--sun"
+        data-cm-glyph="sun"
+      >
+        <Icon name="sun" class="h-[1.125rem] w-[1.125rem]" />
+      </span>
+    </button>
+  </div>
+
+  <div class="context-menu__sep" data-cm-sep="actions" aria-hidden="true"></div>
+
+  {
+    targetItems.map(({ action, when, icon, label, hint }) => (
+      <button
+        type="button"
+        role="menuitem"
+        tabindex="-1"
+        class="context-menu__item"
+        data-cm-action={action}
+        data-cm-when={when}
+        title={titled(label, hint)}
+        hidden={when ? true : undefined}
+      >
+        <span class="context-menu__icon">
+          <Icon name={icon} class="h-4 w-4" />
+        </span>
+        <span class="context-menu__label" data-cm-label>{label}</span>
+        <span class="context-menu__hint" data-cm-hint>{hint}</span>
+      </button>
+    ))
+  }
+
+  <div class="context-menu__sep" data-cm-sep="target" aria-hidden="true"></div>
+
+  {
+    scrollItems.map(({ action, icon, label, hint }) => (
+      <button
+        type="button"
+        role="menuitem"
+        tabindex="-1"
+        class="context-menu__item"
+        data-cm-action={action}
+        title={titled(label, hint)}
+      >
+        <span class="context-menu__icon">
+          <Icon name={icon} class="h-4 w-4" />
+        </span>
+        <span class="context-menu__label" data-cm-label>{label}</span>
+        <span class="context-menu__hint" data-cm-hint>{hint}</span>
+      </button>
+    ))
+  }
+</div>

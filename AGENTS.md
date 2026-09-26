@@ -250,7 +250,44 @@ getCollection("post") → pages/post/[slug].astro（render(entry) + 显式套 La
 - **两套 DOM 共用同一份 `experiences`**，`md:block` / `md:hidden` 只做显示切换，不重复写渲染逻辑。判定表会检查两边条目数相等。
 - 桌面端奇数条 `mr-auto pr-3`（靠左）、偶数条 `ml-auto pl-3`（靠右）；连接线方向随之 `right-full mr-1` / `left-full ml-1`。
 
-图标走 `src/components/icon.astro`：JSON 里只填 `icon: "briefcase"` 这样的 **lucide 名**，组件内部是一张 `Record<string, string>` 的 SVG 片段表（当前 19 个，取自 `lucide-static`，ISC 许可）。**加图标 = 往这张表里补一条**，不要为此引依赖；名字对不上时回落渲染 `initial` 的首字（时间线传的是 `company`）。
+图标走 `src/components/icon.astro`：JSON 里只填 `icon: "briefcase"` 这样的 **lucide 名**，组件内部是一张 `Record<string, string>` 的 SVG 片段表（当前 31 个，取自 `lucide-static`，ISC 许可）。**加图标 = 往这张表里补一条**，不要为此引依赖；名字对不上时回落渲染 `initial` 的首字（时间线传的是 `company`）。
+
+### 6.9 自定义右键菜单（`context-menu.astro` + `main.js` + `main.css`）
+
+全站右击弹出一块磨砂面板，结构自上而下三段：
+
+- **顶排图标行**：后退 / 前进 / 刷新页面 / 回到主页，末尾接日 / 月切换 —— 5 个等宽方形按钮排成一行（`space-between` 铺满面板，面板因目标组变宽时会跟着拉开）；
+- **目标组**（有目标时才出现，条目靠 `data-cm-when` 标适用目标）：复制文字 / 复制链接地址 / 在新标签页打开 / 复制图片地址 / 在新标签页打开；
+- **滚动**：回到顶部 / 回到底部。
+
+图标行没有文字位，所以**名称走 `aria-label`、快捷键提示收进 `title`**（悬停即见「后退 · Alt + ←」）；列表项的提示仍显示在右侧。原来那行 eyebrow（`PAGE · 页面操作` / `LINK · 链接` / …）已取消，命中目标的信息改由容器的 `aria-label` 承担 —— 探针 ㉒c 断言模板里不再有 `[data-cm-title]`。挂载点是 `main.astro` 里 `<Endnote>` 之后的 `<ContextMenu />`。分工：
+
+| 想改的东西 | 改哪里 |
+| --- | --- |
+| 文案 / 快捷键提示 | `collections/pages.json` → `common.contextMenu.*` |
+| 结构、图标、分组、目标组的适用条件（`data-cm-when`） | `src/components/context-menu.astro` |
+| 外观（磨砂、圆角、虚线边框、明暗 token、入场动效、切换按钮） | `main.css` 的 `.context-menu*` 段 |
+| 行为（放行规则、目标识别、定位、禁用态、动作） | `main.js` 的 `contextMenuFunctionality()` |
+| 明暗切换的行为（两处入口共用这一份） | `main.js` 的 `setColorScheme()` |
+
+**整块 DOM 由服务端渲染，JS 只切 `.is-open`（显隐）、`.is-ready`（入场动画）与条目的 `hidden` 属性**，位置由 `--cm-x/--cm-y` 注入、缩放原点由 `--cm-origin-*` 跟随光标落点（所以动画是从鼠标点「长出来」的）。这是硬约束不是偏好：Tailwind v4 只产出源码里字面出现的类名（§9.7），菜单若用 JS 拼 DOM，`dark:` 变体一个都不会生效。颜色全部收在组件级 `--cm-*` token 里，明暗两套只换 token 值，JS 里连一句可见中文都没有（文案一律经组件上的 `data-*` 转手）。
+
+七条容易踩的行为约定：
+
+1. **豁免清单只剩「原生菜单确实更好用」的地方**：`input / textarea / select / [contenteditable] / video / audio` 以及 `[data-context-menu='off']`。链接、图片、选中文字都已接管，对应能力由菜单自己提供；`Ctrl`（或 `⌘`）+ 右键是随时退回原生菜单的逃生口（另存为 / 检查元素）。动 `CONTEXT_MENU_EXEMPT` 之前先想清楚访客会因此丢掉哪个习惯用法。
+2. **选中态必须在 `pointerdown` 里快照，而且得快照 `getClientRects()`**。右键按下本身会清掉选区，等 `contextmenu` 触发时 `getSelection()` 已经空了。判断「这次右键是否落在选区内」要用落点是否命中所存 rect，**不要用 `range.intersectsNode()`** —— 点到 `<body>`、`<main>` 这类祖先元素时它返回 true，页面上残留一处旧选区就会到处冒出「复制文字」。
+3. **目标识别是「链接优先」**：先 `closest('a[href]')`，再 `closest('img')`。卡片缩略图这类「图包在链里」的结构，访客要的是链接而不是图片地址（首页 `article-card` / `project` / `site-card` 全是这个结构，探针 ⑤c 盯着它）。`anchor.href` 与 `img.currentSrc || img.src` 拿到的都是解析后的绝对地址，和浏览器「复制链接地址」一致。
+4. **前进 / 后退的禁用态靠自增序号**，浏览器没有「能否前进」的 API：`stampHistoryEntry()` 给每条历史记录在 `history.state.__cmIndex` 打序号（`history.state` 随条目保存与恢复，含 bfcache 与刷新），`sessionStorage.__cmIndexMax` 记本标签页见过的最大序号，于是 `idx > 0` 能后退、`idx < max` 能前进。新条目一律取 `max + 1`，所以「后退之后又点新链接」会自动把前进分支截断 —— 这正是浏览器的真实语义。
+5. **复制是「先反馈、后关闭」**：成功把条目文案换成「已复制」、900ms 后自动收起；失败换成「复制失败」并**保持菜单打开**，让访客改走 `Ctrl + 右键`。因此延迟关闭必须认 `openToken` —— `open()` 每次自增，定时器回调里比对，否则「复制完立刻重新右键」会被上一个定时器顺手关掉（探针 ㊲）。每次 `open()` 开头 `resetLabels()` 把文案复位。
+6. **明暗按钮走 CSS，不靠 JS 换图**：日 / 月两个 glyph 都渲染在 DOM 里，靠 `html.dark` 选择器互换 `opacity` + `rotate`；`aria-label` / `title` 由 `syncThemeButton()` 在打开与切换后写入。两处入口（header 的日 / 月按钮、菜单里的切换按钮）共用 `setColorScheme()` —— 各写一遍早晚漂移成「主题变了但 header 还写着日间」。菜单传 `animate: false` 立刻换肤，不走 header 那 500ms 的日落动画。
+7. **触屏（`hover: none`）直接 `return` 不接管** —— 长按的默认行为是选字 / 存图，抢过来只会添乱。桌面上这些操作的键盘替代路径（`Alt+←/→`、`F5`、`Alt+Home`、`Home`、`End`）都是浏览器自带行为，没有额外绑键，只作为 `title` 提示。
+8. **「回到主页」走 `location.assign("/")`，且已经在主页时置灰**。判据是 `/^\/(index\.html)?$/` 的正则 —— 构建产物里首页是 `/index.html`，经静态服务按目录访问时是 `/`，两种形态都得算主页，只比 `"/"` 会在其中一种下漏判。
+
+**面板宽度按内容自适应**：`width: max-content` + `min-width: 15.5rem` + `max-width: min(18rem, calc(100vw - 1rem))`。**`min-width` 的数值由顶排图标行决定**（5 个 2.5rem 方形按钮 + `space-between` 分掉的间隙），低于它按钮就会挤在一起；目标组的文案更长（「在新标签页打开」+「Ctrl + 点击」），写死宽度又会把它挤成两行（实测第一次就折成了「在新标签页打 / 开」）。`.context-menu__label` 配 `overflow: hidden` + `text-overflow: ellipsis` 兜底，探针 ④d 用「项高 < 40px」盯着折行，㉑c 盯着图标行的等宽等高与同排。
+
+**目标组用 `hidden` 属性切显隐，两条兜底不能省**：`.context-menu__item` 自己写了 `display: flex`，干得过 UA 的 `[hidden]{display:none}`，所以 `.context-menu__item[hidden]`（以及 `.context-menu__sep[hidden]`）必须显式写出来；渲染时也只传 `hidden={when ? true : undefined}` —— `hidden="false"` 是**有值**的，照样隐藏，会静默吃掉整组页面操作。`hidden` 顺带把条目移出无障碍树，键盘导航也就不用再单独过滤。
+
+无障碍：容器 `role="menu"` + 随目标动态更新的 `aria-label`，图标行按钮与列表条目都是 `role="menuitem"` + `aria-disabled`（图标行的名称只能走 `aria-label`，因为整块按钮里没有文字）；条目 `tabindex="-1"` 不进 Tab 序，靠方向键在**可用（未 hidden、未禁用）项之间**循环，`Esc` / `Tab` / 点击外部 / 滚动 / 改尺寸都会关闭（方向键的顺序就是 DOM 顺序：图标行 5 个在前，列表项在后）。禁用用 `.is-disabled` 类（`pointer-events: none` + 降透明度），不是 `disabled` 属性 —— 因为「条目是否可用」是运行时可变的，属性会带来额外的状态同步负担。
 
 ## 7. 主题与样式系统
 
@@ -438,6 +475,12 @@ MissingSharp: Could not find Sharp. Please install Sharp (`sharp`) manually ...
 1. **`oklch(0.87 0 0)` 与 `oklch(0.87 0 none)` 是同一个颜色。** chroma = 0 时 hue 无意义，Chrome 序列化时可能给 `none` 也可能给 `0` —— 实测**目标站是 `0`、本地是 `none`**，一次刷出 163 项假失败。判前必须归一化：`v.replace(/\s+none\b/g, " 0")`。注意只对以 `oklch(`/`rgb(` 开头的字符串做（`\s+none` 要求前导空白，本来就不会误伤整体为 `none` 的 `display`/`boxShadow` 值）。
 2. **Tailwind preflight 给所有元素 `border-style: solid` + `border-width: 0`**，所以 `getComputedStyle(el).borderTopColor` 会取到 `currentColor`（暗色下即 body 文字色）—— 本地 body 设了白字、目标站 body 是默认黑，于是「不画边框的元素」比出一堆 `rgb(255,255,255)` vs `rgb(0,0,0)`，看着像严重问题。**判据要用 `parseFloat(borderWidth) === 0` 跳过**，不能写 `borderStyle === "none"`（这个条件永远不成立，一次实测剩 3 项假失败）。
 
+### 9.20 `position: fixed` 的元素不能用 `captureBeyondViewport` 截图
+
+`Page.captureScreenshot({clip, captureBeyondViewport: true})` 会把视口撑到整页高度，`fixed` 元素随之被重排到文档顶部 —— 截图里根本拍不到它（实测右键菜单的特写只剩身后的瓷砖背景，看着像「菜单没渲染」）。fixed 元素走视口捕获（`captureBeyondViewport` 用默认 `false`）。
+
+**但 `clip` 依然是文档坐标**，所以改视口捕获不等于坐标也跟着改：截图前 `scrollTo(0,0)` 的场合文档坐标 == 视口坐标，直接填 `rect` 就行（右键菜单的 `sampleTheme()`）；若元素是 `scrollIntoView` 之后才拍的、页面已经滚过，必须补 `y: rect.top + scrollY`（`x` 同理补 `scrollX`），否则裁出来的是「坐标对得上、内容对不上」的一块背景 —— `shotTarget()` 第一次就裁到了页面中段（同一份代码的另一半正好是 §12 里「元素特写 clip 是文档坐标」那条，两处说的是同一件事）。
+
 ## 10. 常见改造任务速查
 
 | 想做的事 | 改哪里 |
@@ -461,6 +504,11 @@ MissingSharp: Could not find Sharp. Please install Sharp (`sharp`) manually ...
 | 改备案号 | `collections/site.json` 的 `legal.icp`（设 `null` 即隐藏） |
 | 登文章（本地改不到） | 去博客仓库 `kemiao-moretti/meowloge` 的 `content/posts/` 加 md，然后 `POSTS_REFRESH=1 pnpm build` |
 | 改主题色 / 字体 | `src/assets/css/main.css` 的 `@theme` 块 |
+| 改右键菜单文案 / 快捷键提示 / 目标组标签 | `collections/pages.json` 的 `common.contextMenu.*`（见 §6.9）—— 图标行的 `aria-label` 与 `title` 也从这里取 |
+| 改右键菜单的放行规则 / 目标识别 / 动作 | `main.js` 的 `CONTEXT_MENU_EXEMPT` / `contextMenuFunctionality()` |
+| 改右键菜单的结构 / 图标行的按钮与顺序 / 目标组适用条件 `data-cm-when` | `context-menu.astro` 的 `actions` / `scrollItems` / `targetItems` 三个数组 |
+| 改右键菜单外观（图标行、列表项、明暗 token、入场动效） | `main.css` 的 `.context-menu*` 段 —— 动图标行按钮尺寸时记得同步面板 `min-width` |
+| 改明暗切换行为（header 与右键菜单两处入口共用） | `main.js` 的 `setColorScheme()` |
 | 改占位块外观 | `src/components/placeholder-media.astro`（全站唯一入口） |
 
 ## 11. 代码规范
@@ -488,6 +536,7 @@ node .workbuddy/tmp/verify-about.mjs http://127.0.0.1:4399  # About 页跨站判
 node .workbuddy/tmp/shot-about.mjs                           # About 页按锚点截图（时间线 / 联系区 / 移动端）
 node .workbuddy/tmp/verify-outlink.mjs http://127.0.0.1:4399 # 文章卡跳博客（真点击 + hover 截图）8 项
 node .workbuddy/tmp/probe-images.mjs                         # 图片加载 + 相对引用
+node .workbuddy/tmp/verify-context-menu.cjs http://127.0.0.1:4399 # 右键菜单 79 项判定 + 明暗/hover/目标组截图
 node .workbuddy/tmp/shot-view.mjs http://127.0.0.1:4399 <out> # 视口截图；TASKS 第 5 位传选择器可截元素特写
 ```
 
@@ -504,7 +553,12 @@ Chrome 在 `C:/Users/Administrator/.cache/puppeteer/chrome/win64-131.0.6778.204/
 - 静态 grep 产物只能证明属性写对了，证明不了浏览器行为。要证明 `target="_blank"` 真的开新标签，**必须在 browser 层监听**：连 `/json/version` 的 `webSocketDebuggerUrl` → `Target.setDiscoverTargets({discover:true})` → 收集 `targetCreated` / `targetInfoChanged` 的 `targetInfo.url`（popup 的 URL 是先空后补，只认 `targetCreated` 会拿到空串）。**页面 session 收不到 popup 的 Target 事件**，且在 page session 调 `Target.setAutoAttach({waitForDebuggerOnStart:true})` 会让 popup 卡在启动前。
 - 点击前先 `elementFromPoint(cx, cy)` 断言命中卡片自身，再发 `mouseMoved → mousePressed → mouseReleased`（`mousePressed` 带 `buttons:1`）。卡片中心常被 `z-[25]` 光斑层之类覆盖，但那些层是 `pointer-events-none`，命中检测能自动排除。
 - **验 `:hover` 态**：先移到 `(300,300)` 再移到目标，两次移动之间 sleep 一下；否则同一次移动可能被判为无变化。hover 后 `getComputedStyle` 读 `rotate`（Tailwind v4 用独立 `rotate` 属性，不是 `transform`）能区分「箭头显形」与「箭头方向对」。
-- **元素特写截图**用 `Page.captureScreenshot({clip, captureBeyondViewport:true})`，`clip` 是**文档坐标**（`rect.left + scrollX`）。比整页截图快得多，也不会像 `captureBeyondViewport` 截长页那样把 Chrome 挂住。
+- **元素特写截图**用 `Page.captureScreenshot({clip, captureBeyondViewport:true})`，`clip` 是**文档坐标**（`rect.left + scrollX`）。比整页截图快得多，也不会像 `captureBeyondViewport` 截长页那样把 Chrome 挂住。**但 `fixed` 元素不能这么截**（见 §9.20）。
+- **要验「复制」这类剪贴板行为，别去读真实剪贴板**：`navigator.clipboard.readText()` 要求文档获得焦点，headless 下不稳。改用 `Page.addScriptToEvaluateOnNewDocument` 在文档起点给 `Clipboard.prototype.writeText` 与 `window.open` 装桩、把入参记进 `window.__cmCopied` / `window.__cmOpened`（每次导航自动重装，不用手动补）。断言的正是该验的东西：**我们传对了字符串、用了 `_blank` + `noopener`**（`verify-context-menu.cjs` 的 ㉟–㊹）。
+- **`mousePressed` 会清掉页面选区**。凡「有选中文本时」的逻辑，在 `contextmenu` / `click` 里现查 `getSelection()` 永远是空 —— 实现要在 `pointerdown` 里快照文字与 `getClientRects()`，探针也要在右键前重新 `selectNodeContents` 一次（否则「落在选区之外」那条其实在测「压根没有选区」，`verify-context-menu.cjs` 的 ⑥/⑥c）。
+- **导航目标要写全尾斜杠**（`/posts/` 而非 `/posts`）：`python -m http.server` 会把前者 301 到后者，这次额外跳转会污染 history，「后退」看起来原地不动 —— 像 bug，其实是探针自己踩的。
+- **别写死点击坐标**。用 `document.elementFromPoint` 按网格扫一个「不会命中 `a`/`img`/`input` 且放得下待测元素」的落点（`verify-context-menu.cjs` 的 `pickPoint()`）—— 现在它要的是一块**没有右键目标**的纯文本区，这样才测得到「无目标」那套条目；`(600,400)` 在首页可能正压在卡片链接上，测出来的是链接专属菜单。
+- **手上有「滚动即关菜单」这类逻辑时，点击前必须等页面滚停**。页面懒加载图片会让浏览器做 **scroll anchoring** 微调 —— 深滚之后还会来一次迟到的 ~21px 滚动，那一下会触发 `scroll` 把刚打开的菜单关掉，症状是「点下去菜单没出来」，从断言里完全看不出原因（探针 ④ 就这样假失败过一次）。两手准备：`Page.addScriptToEvaluateOnNewDocument` 注入 `html{overflow-anchor:none}`，外加点击前轮询到 `scrollY` 连续两次不变（`verify-context-menu.cjs` 的 `settleScroll()`）。**先做「空白处右键」的对照实验再怀疑实现** —— 这次就是靠对照（`.workbuddy/tmp/debug-link-menu.cjs`）才发现与「点链接」无关。
 
 长任务一律：`cmd > .workbuddy/tmp/x.log 2>&1` + `run_in_background: true`，**不要管道给 `tail`/`head`**（外壳被回收会连子进程一起带走）。
 

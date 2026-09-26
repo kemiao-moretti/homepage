@@ -2,13 +2,25 @@
 	{
 		"name": "个人博客",
 		"url": "https://blog.518339.xyz",
-		"screenshot": "",
-		"description": "主博客，技术文章与生活记录都在这里，本站的文章也全部同步自它。"
+		"screenshot": "https://openlist.081531.xyz/d/lsky-git/lsky/2026/09/26/6ab767e613867.webp",
+		"description": "克喵的博客，记录者我的一些文字。"
 	},
 	{
-		"name": "占位站点二",
-		"url": "https://example.com",
-		"screenshot": "",
-		"description": "占位：另一个站点的说明。screenshot 留空会自动渲染渐变占位图。"
+		"name": "Memos",
+		"url": "https://memos.518339.xyz",
+		"screenshot": "https://openlist.081531.xyz/d/lsky-git/lsky/2026/09/26/6ab768c38f338.webp",
+		"description": "克喵的即刻短文，记录者我的一些即刻短文。"
+	},
+	{
+		"name": "Uptime",
+		"url": "https://uptime.081531.xyz/status/web",
+		"screenshot": "https://openlist.081531.xyz/d/lsky-git/lsky/2026/09/26/6ab76c5a4539f.webp",
+		"description": "克喵的监控"
+	},
+	{
+		"name": "Umami",
+		"url": "https://um.081531.xyz/share/aEm4tZWjLPsyKHl6",
+		"screenshot": "https://openlist.081531.xyz/d/lsky-git/lsky/2026/09/26/6ab76f229276b.webp",
+		"description": "克喵的Umami统计"
 	}
 ]

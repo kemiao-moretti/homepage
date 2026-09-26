@@ -178,6 +178,322 @@ html.dark .footer-shell {
 	background: linear-gradient(#171717bd, #0a0a0a9e);
 }
 
+/* 自定义右键菜单 —— 磨砂面板，与 header 胶囊 / footer 同一套语言。
+   颜色全部走组件级 token，明暗两套只换 token 值，不在别处硬编码。
+   JS 只切 .is-open（display）与 .is-ready（入场动画），位置由 --cm-x/--cm-y 注入，
+   缩放原点由 --cm-origin-* 跟随光标落点，所以动画是从鼠标点「长出来」的。 */
+.context-menu {
+	--cm-surface: linear-gradient(#ffffffeb, #ffffffd6);
+	--cm-border: rgb(212 212 212 / 0.75);
+	--cm-shadow:
+		0 26px 60px -30px rgb(15 23 42 / 0.45), 0 2px 8px -4px rgb(15 23 42 / 0.16);
+	--cm-title: #a3a3a3;
+	--cm-label: #404040;
+	--cm-label-strong: #171717;
+	--cm-icon: #737373;
+	--cm-icon-strong: #404040;
+	--cm-hint: #737373;
+	--cm-hover: rgb(0 0 0 / 0.045);
+	--cm-sep: rgb(229 229 229 / 0.95);
+	--cm-focus: rgb(56 189 248 / 0.9);
+	--cm-glow-warm: rgb(254 243 199 / 0.6);
+	--cm-glow-cool: rgb(224 242 254 / 0.6);
+	--cm-disabled-opacity: 0.32;
+
+	position: fixed;
+	left: var(--cm-x, -9999px);
+	top: var(--cm-y, -9999px);
+	z-index: 60;
+	display: none;
+	flex-direction: column;
+	/* 宽度按内容自适应。min-width 由顶排图标行决定：5 个 2.5rem 方形按钮 + 间隙，
+	   低于这个值按钮就会挤在一起（间隙由 space-between 分配，这里等于给它留够余量）。
+	   目标组的文案更长（在新标签页打开 + Ctrl + 点击），max-width 负责视口不出血。 */
+	width: max-content;
+	min-width: 15.5rem;
+	max-width: min(18rem, calc(100vw - 1rem));
+	padding: 0.4rem;
+	overflow: hidden;
+	opacity: 0;
+	border: 1px dashed var(--cm-border);
+	border-radius: var(--radius-panel);
+	background-color: rgb(255 255 255 / 0.92);
+	background-image: var(--cm-surface);
+	-webkit-backdrop-filter: blur(18px) saturate(1.4);
+	backdrop-filter: blur(18px) saturate(1.4);
+	box-shadow: var(--cm-shadow);
+}
+
+.context-menu.is-open {
+	display: flex;
+}
+
+.context-menu.is-ready {
+	opacity: 1;
+	transform-origin: var(--cm-origin-x, 0px) var(--cm-origin-y, 0px);
+	animation: context-menu-in 190ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+html.dark .context-menu {
+	--cm-surface: linear-gradient(#171717f2, #0a0a0aeb);
+	--cm-border: rgb(64 64 64 / 0.7);
+	--cm-shadow:
+		0 26px 60px -30px rgb(0 0 0 / 0.82), 0 2px 8px -4px rgb(0 0 0 / 0.55);
+	--cm-title: #737373;
+	--cm-label: #d4d4d4;
+	--cm-label-strong: #ffffff;
+	--cm-icon: #a3a3a3;
+	--cm-icon-strong: #e5e5e5;
+	--cm-hint: #a3a3a3;
+	--cm-hover: rgb(255 255 255 / 0.075);
+	--cm-sep: rgb(38 38 38 / 0.95);
+	--cm-glow-warm: rgb(251 191 36 / 0.1);
+	--cm-glow-cool: rgb(34 211 238 / 0.1);
+
+	background-color: rgb(23 23 23 / 0.94);
+}
+
+.context-menu__atmosphere {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+}
+
+.context-menu__glow {
+	position: absolute;
+	width: 6rem;
+	height: 6rem;
+	border-radius: 999px;
+	filter: blur(28px);
+}
+
+.context-menu__glow--warm {
+	top: -2.5rem;
+	left: -2.25rem;
+	background-color: var(--cm-glow-warm);
+}
+
+.context-menu__glow--cool {
+	right: -2.25rem;
+	bottom: -2.75rem;
+	background-color: var(--cm-glow-cool);
+}
+
+/* 顶排图标行：后退 / 前进 / 刷新 / 回到主页 + 末尾的明暗切换。
+   图标按钮排成一行，用 space-between 铺满面板 —— 面板因目标组变宽时，
+   它们会跟着拉开，视觉上更像一条工具栏、而不是几颗挤在左边的糖。 */
+.context-menu__actions {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.35rem;
+	padding: 0.15rem 0.15rem 0.1rem;
+}
+
+.context-menu__action {
+	position: relative;
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	padding: 0;
+	border: 0;
+	border-radius: 0.75rem;
+	background: none;
+	color: var(--cm-icon);
+	transition:
+		background-color 150ms var(--ease-swift),
+		color 150ms var(--ease-swift),
+		transform 240ms var(--ease-swift);
+}
+
+/* 图标行的方形按钮 hover 时也让图标「轻放」一下，和列表项保持同一套反馈语言 */
+.context-menu__action > svg {
+	transition: transform 180ms var(--ease-swift);
+}
+
+/* 明暗切换按钮的日 / 月两个 glyph 都留在 DOM 里，靠 html.dark 纯 CSS 互换，
+   JS 一格都不碰 —— 否则「主题变了但图标没跟上」是迟早的事。 */
+.context-menu__action--theme:hover {
+	transform: rotate(22deg);
+}
+
+.context-menu__action.is-disabled {
+	opacity: var(--cm-disabled-opacity);
+	pointer-events: none;
+}
+
+.context-menu__action:hover:not(.is-disabled),
+.context-menu__action:focus-visible {
+	background-color: var(--cm-hover);
+	color: var(--cm-icon-strong);
+}
+
+.context-menu__action:hover:not(.is-disabled) > svg {
+	transform: scale(1.08);
+}
+
+.context-menu__action:focus-visible {
+	outline: 2px solid var(--cm-focus);
+	outline-offset: -2px;
+}
+
+.context-menu__action:active:not(.is-disabled) {
+	transform: scale(0.94);
+}
+
+.context-menu__glyph {
+	position: absolute;
+	inset: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	transition:
+		opacity 240ms var(--ease-swift),
+		transform 240ms var(--ease-swift);
+}
+
+.context-menu__glyph--sun {
+	opacity: 0;
+	transform: rotate(-70deg) scale(0.5);
+}
+
+html.dark .context-menu__glyph--sun {
+	opacity: 1;
+	transform: rotate(0deg) scale(1);
+}
+
+html.dark .context-menu__glyph--moon {
+	opacity: 0;
+	transform: rotate(70deg) scale(0.5);
+}
+
+/* 图标 / 标签的基样式必须排在 :hover 规则之前，
+   否则 biome 的 noDescendingSpecificity 会警告「低优先级写在后面，可能被覆盖」 */
+.context-menu__icon {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 1rem;
+	height: 1rem;
+	color: var(--cm-icon);
+	transition:
+		transform 180ms var(--ease-swift),
+		color 150ms var(--ease-swift);
+}
+
+.context-menu__label {
+	min-width: 0;
+	flex: 1 1 auto;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	transition: transform 180ms var(--ease-swift);
+}
+
+.context-menu__item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	width: 100%;
+	min-height: 2.125rem;
+	padding: 0.35rem 0.7rem;
+	border: 0;
+	border-radius: var(--radius-inner);
+	background: none;
+	color: var(--cm-label);
+	font-family: var(--font-serif);
+	font-size: 0.8rem;
+	line-height: 1.3;
+	text-align: left;
+	transition:
+		background-color 150ms var(--ease-swift),
+		color 150ms var(--ease-swift);
+}
+
+/* JS 按右键落点切换「目标组」条目用的是 hidden 属性。UA 的 [hidden]{display:none}
+   是元素选择器级别，干不过上面这条 display:flex，必须显式覆盖 —— 少这一条，
+   整组页面操作会被一个 hidden="false" 静默吃掉。 */
+.context-menu__item[hidden] {
+	display: none;
+}
+
+.context-menu__item:hover:not(.is-disabled),
+.context-menu__item:focus-visible {
+	background-color: var(--cm-hover);
+	color: var(--cm-label-strong);
+}
+
+.context-menu__item:hover:not(.is-disabled) .context-menu__label {
+	transform: translateX(1px);
+}
+
+.context-menu__item:hover:not(.is-disabled) .context-menu__icon {
+	color: var(--cm-icon-strong);
+	transform: scale(1.08);
+}
+
+.context-menu__item:focus-visible {
+	outline: 2px solid var(--cm-focus);
+	outline-offset: -2px;
+}
+
+.context-menu__item.is-disabled {
+	opacity: var(--cm-disabled-opacity);
+	pointer-events: none;
+}
+
+.context-menu__hint {
+	flex: none;
+	margin-left: auto;
+	font-family: var(--font-sans);
+	font-size: 0.6rem;
+	letter-spacing: 0.08em;
+	color: var(--cm-hint);
+}
+
+.context-menu__sep {
+	margin: 0.3rem 0.5rem;
+	border-top: 1px dashed var(--cm-sep);
+}
+
+/* 目标组为空时，它下面那条分隔线也要跟着消失 */
+.context-menu__sep[hidden] {
+	display: none;
+}
+
+@keyframes context-menu-in {
+	from {
+		opacity: 0;
+		transform: scale(0.94) translateY(-3px);
+	}
+
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.context-menu.is-ready {
+		animation: none;
+	}
+
+	.context-menu__item,
+	.context-menu__icon,
+	.context-menu__label,
+	.context-menu__action,
+	.context-menu__action > svg,
+	.context-menu__glyph {
+		transition: none;
+	}
+}
+
 /* 瓷砖网格：mask-image 无法用工具类表达，必须手写 */
 .tile-region-shell {
 	height: 48rem;

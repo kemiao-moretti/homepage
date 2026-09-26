@@ -1,14 +1,14 @@
 [
 	{
-		"name": "占位项目一",
-		"description": "占位：一句话说明这个项目解决了什么问题。字段结构与下一条相同，自由增删条目即可。",
-		"image": "",
-		"url": "https://example.com"
+		"name": "Hugo-theme-mogai",
+		"description": "基于everfu对于张洪heo博客设计的hugo主题的魔改",
+		"image": "https://openlist.081531.xyz/d/lsky-git/lsky/2026/09/26/6ab74162efc28.jpeg",
+		"url": "https://github.com/kemiao-moretti/blog"
 	},
 	{
-		"name": "占位项目二",
-		"description": "占位：第二个项目的说明。image 留空会自动渲染渐变占位图，填了就显示你的截图。",
-		"image": "",
-		"url": "https://example.com"
+		"name": "homepage",
+		"description": "基于面条佬项目的博客魔改为主页，样式参考Liushen的主页。",
+		"image": "https://openlist.081531.xyz/d/lsky-git/lsky/2026/09/26/6ab7421b28a2d.jpeg",
+		"url": "https://github.com/kemiao-moretti/homepage"
 	}
 ]

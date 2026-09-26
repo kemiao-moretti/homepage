@@ -3,18 +3,36 @@
 		"name": "GitHub",
 		"url": "https://github.com/kemiao-moretti",
 		"icon": "github",
-		"group": "代码空间"
+		"group": "社交联系"
 	},
 	{
 		"name": "个人博客",
 		"url": "https://blog.518339.xyz",
 		"icon": "rss",
-		"group": "内容去向"
+		"group": "社交联系"
 	},
 	{
 		"name": "邮箱",
 		"url": "mailto:contact@518339.xyz",
 		"icon": "mail",
-		"group": "内容去向"
+		"group": "社交联系"
+	},
+	{
+		"name": "QQ",
+		"url": "https://qm.qq.com/q/w3vQmGDKN4",
+		"icon": "qq",
+		"group": "社交联系"
+	},
+	{
+		"name": "BiliBili",
+		"url": "https://s.081531.xyz/bilibili/",
+		"icon": "bilibili",
+		"group": "社交联系"
+	},
+	{
+		"name": "Telegram",
+		"url": "https://s.081531.xyz/telegram/",
+		"icon": "telegram",
+		"group": "社交联系"
 	}
 ]

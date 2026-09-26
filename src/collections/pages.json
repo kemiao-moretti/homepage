@@ -13,7 +13,35 @@
 		"truncatedNotice": "正文从博客抓取失败，这里只显示了摘要。",
 		"truncatedLink": "前往原文阅读完整内容",
 		"viewSource": "查看原文 →",
-		"backToPosts": "← 返回文章列表"
+		"backToPosts": "← 返回文章列表",
+		"contextMenu": {
+			"title": "Page · 页面操作",
+			"titleLink": "Link · 链接",
+			"titleImage": "Image · 图片",
+			"titleText": "Text · 选中文字",
+			"themeToDay": "切换到日间",
+			"themeToNight": "切换到夜间",
+			"back": "后退",
+			"forward": "前进",
+			"refresh": "刷新页面",
+			"home": "回到主页",
+			"top": "回到顶部",
+			"bottom": "回到底部",
+			"copyText": "复制文字",
+			"copyLink": "复制链接地址",
+			"copyImage": "复制图片地址",
+			"open": "在新标签页打开",
+			"copied": "已复制",
+			"copyFailed": "复制失败",
+			"hintBack": "Alt + ←",
+			"hintForward": "Alt + →",
+			"hintRefresh": "F5",
+			"hintHome": "Alt + Home",
+			"hintTop": "Home",
+			"hintBottom": "End",
+			"hintCopyText": "Ctrl + C",
+			"hintOpen": "Ctrl + 点击"
+		}
 	},
 	"home": {
 		"projects": {

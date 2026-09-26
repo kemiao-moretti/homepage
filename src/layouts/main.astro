@@ -3,6 +3,7 @@ import "../assets/css/main.css";
 import pages from "../collections/pages.json";
 import site from "../collections/site.json";
 import Atmosphere from "../components/atmosphere.astro";
+import ContextMenu from "../components/context-menu.astro";
 import Endnote from "../components/endnote.astro";
 import Footer from "../components/footer.astro";
 import Header from "../components/header.astro";
@@ -87,6 +88,7 @@ const ogImage = image ? new URL(image, Astro.site).href : "";
     <Endnote label={pages.common.endnote}>
       <Footer />
     </Endnote>
+    <ContextMenu />
     <script>import "../assets/js/main.js";</script>
     <Fragment set:html={import.meta.env.FOOTER_INJECT} />
   </body>
