@@ -3,7 +3,8 @@ import { XMLParser } from "fast-xml-parser";
 import { parse as parseYaml } from "yaml";
 
 const BLOG = process.env.POSTS_BLOG ?? "https://blog.518339.xyz";
-const RSS_PRIMARY = `${BLOG}/posts/index.xml`;
+const ATOM_PRIMARY = `${BLOG}/atom.xml`;
+const RSS_LEGACY = `${BLOG}/posts/index.xml`;
 const RSS_FALLBACK = `${BLOG}/index.xml`;
 const CDN = process.env.POSTS_CDN ?? "https://cdn.jsdmirror.com/gh";
 const MIRROR = process.env.POSTS_REPO ?? "kemiao-moretti/meowloge";
@@ -20,12 +21,20 @@ const parser = new XMLParser({
 	processEntities: true,
 });
 
-interface RssItem {
+interface FeedItem {
 	title: string;
 	link: string;
 	pubDate?: string;
+	updated?: string;
 	description?: string;
+	content?: string;
+	cover?: string;
+	categories?: string[];
+	tags?: string[];
+	series?: string[];
 }
+
+type FrontmatterMap = Map<string, Frontmatter>;
 
 interface Frontmatter {
 	slug?: string;
@@ -38,6 +47,107 @@ interface Frontmatter {
 	tags?: string[] | string;
 	series?: string[] | string;
 	ai_summary?: string;
+}
+
+function textValue(value: unknown): string | undefined {
+	if (value === undefined || value === null) return undefined;
+	if (typeof value === "object" && "#text" in value) {
+		return textValue((value as { "#text"?: unknown })["#text"]);
+	}
+	const text = String(value).trim();
+	return text || undefined;
+}
+
+function asList(value: unknown): Record<string, unknown>[] {
+	if (value === undefined || value === null) return [];
+	return (Array.isArray(value) ? value : [value]) as Record<string, unknown>[];
+}
+
+function isPostLink(link: string): boolean {
+	try {
+		return /\/p\/[^/]+(?:\.html?)?$/.test(new URL(link).pathname);
+	} catch {
+		return false;
+	}
+}
+
+function parseCategories(
+	value: unknown,
+): Pick<FeedItem, "categories" | "tags" | "series"> {
+	const result: Pick<FeedItem, "categories" | "tags" | "series"> = {};
+	const categories = Array.isArray(value)
+		? value
+		: value === undefined || value === null
+			? []
+			: [value];
+
+	for (const category of categories) {
+		const objectCategory =
+			typeof category === "object" && category !== null
+				? (category as Record<string, unknown>)
+				: undefined;
+		const term = objectCategory
+			? textValue(objectCategory["@_term"] ?? objectCategory["#text"])
+			: textValue(category);
+		if (!term) continue;
+		const scheme = objectCategory
+			? textValue(objectCategory["@_scheme"])
+					?.replace(/\/+$/, "")
+					.split("/")
+					.pop()
+					?.toLowerCase()
+			: undefined;
+		const key =
+			scheme === "tag" || scheme === "tags"
+				? "tags"
+				: scheme === "series"
+					? "series"
+					: "categories";
+		const values = result[key] ?? [];
+		values.push(term);
+		result[key] = values;
+	}
+	return result;
+}
+
+export function parseFeed(xml: string): FeedItem[] {
+	const doc = parser.parse(xml) as {
+		rss?: { channel?: { item?: unknown } };
+		feed?: { entry?: unknown };
+	};
+	const atomEntries = asList(doc.feed?.entry);
+	if (atomEntries.length) {
+		return atomEntries
+			.map((entry) => {
+				const links = asList(entry.link);
+				const alternate =
+					links.find((link) => link["@_rel"] === "alternate") ??
+					links.find((link) => link["@_rel"] !== "enclosure");
+				const enclosure = links.find((link) => link["@_rel"] === "enclosure");
+				return {
+					title: textValue(entry.title) ?? "",
+					link: textValue(alternate?.["@_href"]) ?? "",
+					pubDate: textValue(entry.published),
+					updated: textValue(entry.updated),
+					description: textValue(entry.summary),
+					content: textValue(entry.content),
+					cover: textValue(enclosure?.["@_href"]),
+					...parseCategories(entry.category),
+				};
+			})
+			.filter((item) => item.title && isPostLink(item.link));
+	}
+
+	const raw = doc.rss?.channel?.item;
+	return asList(raw)
+		.map((entry) => ({
+			title: textValue(entry.title) ?? "",
+			link: textValue(entry.link) ?? "",
+			pubDate: textValue(entry.pubDate),
+			description: textValue(entry.description),
+			...parseCategories(entry.category),
+		}))
+		.filter((item) => item.title && isPostLink(item.link));
 }
 
 async function get(url: string, timeout = 20000): Promise<string> {
@@ -66,33 +176,6 @@ async function getWithRetry(url: string, tries = 3): Promise<string | null> {
 		}
 	}
 	return null;
-}
-
-function parseRss(xml: string): RssItem[] {
-	const doc = parser.parse(xml) as {
-		rss?: { channel?: { item?: unknown } };
-	};
-	const raw = doc?.rss?.channel?.item;
-	const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
-
-	return list
-		.map((entry) => {
-			const it = entry as Record<string, unknown>;
-			return {
-				title: String(it.title ?? "").trim(),
-				link: String(it.link ?? "").trim(),
-				pubDate: it.pubDate ? String(it.pubDate) : undefined,
-				description:
-					it.description === undefined ? undefined : String(it.description),
-			};
-		})
-		.filter((it) => {
-			try {
-				return /\/p\/[^/]+\.html?$/.test(new URL(it.link).pathname);
-			} catch {
-				return false;
-			}
-		});
 }
 
 function slugFromLink(link: string): string {
@@ -237,15 +320,45 @@ async function listPostFiles(): Promise<string[]> {
 	}
 }
 
-async function fetchRssItems(): Promise<RssItem[]> {
-	const primary = await getWithRetry(RSS_PRIMARY, 2);
-	if (primary) {
-		const items = parseRss(primary);
+async function fetchFeedItems(): Promise<FeedItem[]> {
+	for (const url of [ATOM_PRIMARY, RSS_LEGACY, RSS_FALLBACK]) {
+		const xml = await getWithRetry(url, 2);
+		if (!xml) continue;
+		const items = parseFeed(xml);
 		if (items.length) return items;
 	}
+	return [];
+}
 
-	const fallback = await getWithRetry(RSS_FALLBACK, 2);
-	return fallback ? parseRss(fallback) : [];
+export function addFrontmatterToIndex(
+	index: FrontmatterMap,
+	frontmatter: Frontmatter,
+	fallbackSlug: string,
+): void {
+	if (fallbackSlug) index.set(fallbackSlug, frontmatter);
+	if (frontmatter.slug) index.set(frontmatter.slug, frontmatter);
+}
+
+export function selectFrontmatter(
+	frontmatterByKey: FrontmatterMap,
+	slug: string,
+	title: string,
+): Frontmatter | undefined {
+	return (
+		frontmatterByKey.get(slug) ??
+		[...frontmatterByKey.values()].find(
+			(frontmatter) => frontmatter.title === title,
+		)
+	);
+}
+
+export function resolveBody(
+	article: string | null,
+	item: Pick<FeedItem, "content" | "description">,
+): { body: string; truncated: boolean } {
+	if (article) return { body: absolutize(article), truncated: false };
+	if (item.content) return { body: absolutize(item.content), truncated: false };
+	return { body: item.description ?? "", truncated: true };
 }
 
 export function blogPostsLoader(): Loader {
@@ -268,21 +381,22 @@ export function blogPostsLoader(): Loader {
 				return;
 			}
 
-			const items = await fetchRssItems();
+			const items = await fetchFeedItems();
 
 			if (!items.length) {
 				if (cachedCount > 0) {
-					logger.warn("RSS 两源均不可用，保留上一次缓存");
+					logger.warn("Atom / RSS 源均不可用，保留上一次缓存");
 					return;
 				}
-				const message = "RSS 两源均不可用，且本地无缓存";
+				const message = "Atom / RSS 源均不可用，且本地无缓存";
 				if (strict) throw new Error(message);
 				logger.warn(`${message}（构建继续，文章列表为空）`);
 				return;
 			}
 
 			const files = await listPostFiles();
-			const frontmatterBySlug = new Map<string, Frontmatter>();
+			const frontmatterBySlug: FrontmatterMap = new Map();
+			let frontmatterCount = 0;
 
 			if (files.length) {
 				for (const file of files) {
@@ -292,10 +406,11 @@ export function blogPostsLoader(): Loader {
 					if (!frontmatter) continue;
 					const fallbackSlug =
 						file.split("/").pop()?.replace(/\.md$/, "") ?? "";
-					frontmatterBySlug.set(frontmatter.slug ?? fallbackSlug, frontmatter);
+					addFrontmatterToIndex(frontmatterBySlug, frontmatter, fallbackSlug);
+					frontmatterCount++;
 				}
 				logger.info(
-					`从 CDN 读到 ${frontmatterBySlug.size} 篇 frontmatter（共 ${files.length} 个文件）`,
+					`从 CDN 读到 ${frontmatterCount} 篇 frontmatter（共 ${files.length} 个文件）`,
 				);
 			} else {
 				logger.warn("未能获取仓库文件树，封面 / 标签 / 分类将缺失");
@@ -310,40 +425,42 @@ export function blogPostsLoader(): Loader {
 				const slug = slugFromLink(item.link);
 				if (!slug) continue;
 
-				const frontmatter = frontmatterBySlug.get(slug);
-				const sourceUrl = `${BLOG}/p/${slug}`;
+				const frontmatter = selectFrontmatter(
+					frontmatterBySlug,
+					slug,
+					item.title,
+				);
+				const sourceUrl = item.link;
 
 				const page = await getWithRetry(sourceUrl, 3);
 				const article = page ? extractArticle(page) : null;
 
-				let body: string;
-				let truncated = false;
-
-				if (article) {
-					body = absolutize(article);
-				} else {
-					body = item.description ?? "";
-					truncated = true;
+				const resolved = resolveBody(article, item);
+				const body = resolved.body;
+				const truncated = resolved.truncated;
+				if (truncated) {
 					degraded++;
-					logger.warn(`${slug}: 正文提取失败，降级为 RSS 摘要`);
+					logger.warn(`${slug}: 正文提取失败，降级为订阅摘要`);
 				}
 
 				const date =
-					frontmatter?.date ?? item.pubDate ?? new Date().toISOString();
+					item.pubDate ?? frontmatter?.date ?? new Date().toISOString();
 
 				const data = await parseData({
 					id: slug,
 					data: {
 						title: frontmatter?.title ?? item.title,
-						description: frontmatter?.description ?? "",
+						description: frontmatter?.description ?? item.description ?? "",
 						date,
-						updated: frontmatter?.lastmod,
+						updated: item.updated ?? frontmatter?.lastmod,
 						cover: frontmatter?.cover
 							? absoluteUrl(frontmatter.cover)
-							: undefined,
-						categories: asArray(frontmatter?.categories),
-						tags: asArray(frontmatter?.tags),
-						series: asArray(frontmatter?.series),
+							: item.cover
+								? absoluteUrl(item.cover)
+								: undefined,
+						categories: asArray(frontmatter?.categories ?? item.categories),
+						tags: asArray(frontmatter?.tags ?? item.tags),
+						series: asArray(frontmatter?.series ?? item.series),
 						aiSummary: frontmatter?.ai_summary,
 						sourceUrl,
 						dateFormatted: formatDate(date),

@@ -21,7 +21,7 @@
 		"sinceLabel": "Since"
 	},
 	"subscribe": {
-		"feedUrl": "https://blog.518339.xyz/index.xml",
+		"feedUrl": "https://blog.518339.xyz/atom.xml",
 		"title": "订阅我的博客",
 		"description": "通过以下方式订阅，新文章发布后会自动推送。"
 	},

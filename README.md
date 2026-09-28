@@ -7,7 +7,7 @@
 ## 这个站做什么
 
 - **文章全部远程拉取**，本仓库不放任何 Markdown。构建时从
-  [blog.518339.xyz](https://blog.518339.xyz/) 的 RSS 拿清单、抓渲染后的 HTML 拿全文，
+  [blog.518339.xyz](https://blog.518339.xyz/) 的 Atom 源拿清单、抓渲染后的 HTML 拿全文，
   再从 [meowloge](https://github.com/kemiao-moretti/meowloge) 仓库读 frontmatter
   补上封面 / 分类 / 标签 / 系列 / AI 摘要。博客发文后重建本站即可同步。
 - 页面：`/`、`/posts`、`/post/<slug>`、`/projects`、`/about`、`/sites`。
