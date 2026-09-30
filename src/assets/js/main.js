@@ -32,6 +32,15 @@ document.addEventListener("DOMContentLoaded", () => {
 	contextMenuFunctionality();
 
 	window.addEventListener("scroll", onScroll, { passive: true });
+
+	// View Transitions 下站内跳转不会重跑 DOMContentLoaded，
+	// header 是 transition:persist 的常驻元素，导航后要补正高亮与滚动形态。
+	document.addEventListener("astro:page-load", () => {
+		// 移动菜单在导航前可能还开着，跳走后先把蒙层收掉，避免残留
+		closeMobileMenu();
+		applyMenuItemClasses();
+		evaluateHeaderPosition();
+	});
 });
 
 function onScroll() {
@@ -139,16 +148,19 @@ function showNight(animate) {
 // 这里保留运行时兜底，供客户端路由或锚点跳转后补正。
 window.applyMenuItemClasses = () => {
 	const menuItems = document.querySelectorAll("#menu a");
-	for (let i = 0; i < menuItems.length; i++) {
-		if (menuItems[i].pathname === window.location.pathname) {
-			menuItems[i].classList.add(
-				"text-black",
-				"underline",
-				"decoration-dashed",
-				"decoration-1",
-				"underline-offset-4",
-				"dark:text-white",
-			);
+
+	for (const menuItem of menuItems) {
+		const active = menuItem.pathname === window.location.pathname;
+		menuItem.classList.toggle("text-black", active);
+		menuItem.classList.toggle("underline", active);
+		menuItem.classList.toggle("decoration-dashed", active);
+		menuItem.classList.toggle("decoration-1", active);
+		menuItem.classList.toggle("underline-offset-4", active);
+		menuItem.classList.toggle("dark:text-white", active);
+		if (active) {
+			menuItem.setAttribute("aria-current", "page");
+		} else {
+			menuItem.removeAttribute("aria-current");
 		}
 	}
 };

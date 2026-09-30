@@ -11,7 +11,7 @@ const isActive = (url: string) => normalize(url) === current;
 <!-- 占位高度：header 是 fixed 定位，用这个把首屏内容顶下去 -->
 <div class="pointer-events-none relative h-20 w-full opacity-0"></div>
 
-<header id="header" class="fixed inset-x-0 top-0 z-50 h-20 w-full">
+<header id="header" class="fixed inset-x-0 top-0 z-50 h-20 w-full" transition:persist>
   <div
     class="header-shell flex h-full translate-y-0 items-start justify-between px-2 transition-transform duration-300 ease-out"
   >

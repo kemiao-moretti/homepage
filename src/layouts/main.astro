@@ -1,4 +1,5 @@
 ---
+import { ClientRouter } from "astro:transitions";
 import "../assets/css/main.css";
 import pages from "../collections/pages.json";
 import site from "../collections/site.json";
@@ -78,6 +79,7 @@ const ogImage = image ? new URL(image, Astro.site).href : "";
     </script>
 
     <link rel="icon" type="image/x-icon" href="/assets/images/favicon.png" />
+    <ClientRouter />
     <Fragment set:html={import.meta.env.HEADER_INJECT} />
   </head>
   <body class="antialiased">
