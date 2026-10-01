@@ -10,6 +10,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # 博客仓库 meowloge 部署成功后，会通过 repository_dispatch 发一个 blog-updated
+  # 事件过来，触发这里重建、把最新文章抓进来。触发方见 meowloge 的 deploy.yml。
+  repository_dispatch:
+    types: [blog-updated]
 
 # 同一时间只允许跑一次生产部署，后推的提交直接顶掉还在跑的那次。
 concurrency:
@@ -78,10 +82,13 @@ jobs:
 
       # pnpm build = astro check + astro build。
       # POSTS_STRICT=1 让远端两源全挂时直接失败，宁可这次不部署，也不发布空列表。
+      # 由 meowloge 的 blog-updated 事件触发时 POSTS_REFRESH=1：
+      # 强制 loader 无视 30 分钟 TTL 与旧内容快照，重新拉取最新文章。
       - name: Build
         run: pnpm build
         env:
           POSTS_STRICT: "1"
+          POSTS_REFRESH: ${{ github.event_name == 'repository_dispatch' && '1' || '' }}
 
       # 项目不存在就建，已存在会报 already exists —— 忽略掉即可，所以关掉错误中断。
       # 这一步只看「项目在不在」，真正的部署失败会由下一步明确报出来。
