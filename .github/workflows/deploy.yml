@@ -90,16 +90,8 @@ jobs:
           POSTS_STRICT: "1"
           POSTS_REFRESH: ${{ github.event_name == 'repository_dispatch' && '1' || '' }}
 
-      # 项目不存在就建，已存在会报 already exists —— 忽略掉即可，所以关掉错误中断。
-      # 这一步只看「项目在不在」，真正的部署失败会由下一步明确报出来。
-      - name: Ensure Pages project
-        uses: cloudflare/wrangler-action@v4
-        continue-on-error: true
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages project create ${{ env.PROJECT_NAME }} --production-branch=${{ env.PRODUCTION_BRANCH }}
-
+      # 不单独建项目：wrangler pages deploy 在项目不存在时自动创建、已存在则直接
+      # 部署，天然幂等，避免了 pages project create 在项目已存在时的 already-exists 冲突。
       - name: Deploy
         id: deploy
         uses: cloudflare/wrangler-action@v4
